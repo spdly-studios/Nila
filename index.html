@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendly — Attendance follow-up</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://app.snapserve.ai/api/widget/lead-capture.js"
+      data-token="REDACTED_SNAPSERVE_WIDGET_TOKEN"></script>
+  </head>
+
+  <body>
+    <main class="shell">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">✦</span><span>attendly</span></div>
+        <p class="eyebrow">Classroom tools</p>
+        <nav><a class="active" href="#attendance"><span>▦</span> Attendance</a><a href="#history"><span>◷</span> Call
+            history</a><a href="#settings"><span>⚙</span> Settings</a></nav>
+        <div class="sidebar-foot">
+          <div class="avatar">AS</div>
+          <div><strong>Ananya Sen</strong><small>Class teacher</small></div><span class="more">•••</span>
+        </div>
+      </aside>
+      <section class="content">
+        <header class="topbar">
+          <div>
+            <p class="date">MONDAY, 01 SEPTEMBER 2026</p>
+            <h1>Good morning, Ananya <span>✦</span></h1>
+          </div><button class="icon-btn" aria-label="Notifications">♧<i></i></button>
+        </header>
+        <div class="class-strip">
+          <div><span class="dot"></span><strong id="classLabel">Class 8 · Section A</strong><select id="classSelect"
+              aria-label="Choose class">
+              <option value="8-A">Class 8 · Section A</option>
+              <option value="7-B">Class 7 · Section B</option>
+              <option value="10-C">Class 10 · Section C</option>
+              <option value="6-A">Class 6 · Section A</option>
+            </select></div>
+          <div class="strip-meta"><span class="live-dot"></span> Today’s attendance</div>
+        </div>
+        <div id="attendance" class="grid">
+          <section class="panel attendance-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Daily register</p>
+                <h2>Mark attendance</h2>
+              </div>
+              <div class="head-actions"><button id="addBtn" class="secondary">＋ Add student</button><span id="saveState"
+                  class="save-state">● Saved just now</span></div>
+            </div>
+            <div class="summary">
+              <div><strong id="presentCount">22</strong><span>Present</span></div>
+              <div><strong id="absentCount">3</strong><span>Absent</span></div>
+              <div><strong>25</strong><span>Total students</span></div>
+              <div class="progress-wrap">
+                <div class="progress"><span id="progressBar"></span></div><small id="attendanceRate">88%
+                  attendance</small>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Roll no.</th>
+                    <th>Attendance</th>
+                  </tr>
+                </thead>
+                <tbody id="studentRows"></tbody>
+              </table>
+            </div>
+            <div class="panel-foot"><span><b id="selectedCount">3</b> parents will be contacted</span><button
+                id="startBtn" class="primary">Submit & start calls <span>→</span></button></div>
+          </section>
+          <section class="panel call-panel" id="history">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Automated follow-up</p>
+                <h2>Parent calls</h2>
+              </div><span id="queueBadge" class="badge">3 queued</span>
+            </div>
+            <div id="callIntro" class="call-intro">
+              <div class="phone-art">⌁</div>
+              <h3>Ready to reach out</h3>
+              <p>Submit attendance to call parents of absent students, one by one.</p>
+              <div class="how"><span>1</span> Dial parent <span>2</span> Ask reason <span>3</span> Log response</div>
+            </div>
+            <div id="callQueue" class="call-queue hidden"></div>
+            <div class="api-note"><span>⌁</span>
+              <div><strong>Powered by SnapServe</strong><small>Mock calls dial 8637488905. New student numbers are
+                  dialed as entered.</small></div>
+            </div>
+          </section>
+        </div>
+        <footer>Attendance is private to your classroom <span>•</span> Last synced 9:42 AM</footer>
+      </section>
+    </main>
+    <div id="toast" class="toast"></div>
+    <dialog id="studentDialog">
+      <form id="studentForm"><button type="button" class="close" id="closeDialog">×</button>
+        <p class="section-kicker">New record</p>
+        <h2>Add student</h2><label>Student name<input name="name" required
+            placeholder="e.g. Tara Bose"></label><label>Parent name<input name="pname" required
+            placeholder="e.g. Amit Bose"></label><label>Parent phone<input name="phone" required inputmode="tel"
+            placeholder="e.g. 8637488905"></label><label>Roll number<input name="roll" required
+            placeholder="25"></label><button class="primary" type="submit">Add as absent</button>
+      </form>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+
+</html>
