@@ -11,8 +11,6 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
       rel="stylesheet">
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://app.snapserve.ai/api/widget/lead-capture.js"
-      data-token="REDACTED_SNAPSERVE_WIDGET_TOKEN"></script>
   </head>
 
   <body>
@@ -21,7 +19,7 @@
         <div class="brand"><span class="brand-mark">✦</span><span>attendly</span></div>
         <p class="eyebrow">Classroom tools</p>
         <nav><a class="active" href="#attendance"><span>▦</span> Attendance</a><a href="#history"><span>◷</span> Call
-            history</a><a href="#settings"><span>⚙</span> Settings</a></nav>
+            history</a><a id="settingsLink" href="#settings"><span>⚙</span> Settings</a></nav>
         <div class="sidebar-foot">
           <div class="avatar">AS</div>
           <div><strong>Ananya Sen</strong><small>Class teacher</small></div><span class="more">•••</span>
@@ -57,7 +55,7 @@
             <div class="summary">
               <div><strong id="presentCount">22</strong><span>Present</span></div>
               <div><strong id="absentCount">3</strong><span>Absent</span></div>
-              <div><strong>25</strong><span>Total students</span></div>
+              <div><strong id="totalCount">6</strong><span>Total students</span></div>
               <div class="progress-wrap">
                 <div class="progress"><span id="progressBar"></span></div><small id="attendanceRate">88%
                   attendance</small>
@@ -93,8 +91,7 @@
             </div>
             <div id="callQueue" class="call-queue hidden"></div>
             <div class="api-note"><span>⌁</span>
-              <div><strong>Powered by SnapServe</strong><small>Mock calls dial 8637488905. New student numbers are
-                  dialed as entered.</small></div>
+              <div><strong>Powered by SnapServe</strong><small>New student numbers are dialed as entered.</small></div>
             </div>
           </section>
         </div>
@@ -110,6 +107,17 @@
             placeholder="e.g. Amit Bose"></label><label>Parent phone<input name="phone" required inputmode="tel"
             placeholder="e.g. 8637488905"></label><label>Roll number<input name="roll" required
             placeholder="25"></label><button class="primary" type="submit">Add as absent</button>
+      </form>
+    </dialog>
+    <dialog id="settingsDialog">
+      <form id="settingsForm">
+        <button type="button" class="close" id="closeSettings">×</button>
+        <p class="section-kicker">Connection</p>
+        <h2>SnapServe settings</h2>
+        <p class="dialog-copy">Your API key is stored only in this browser and is never included in the app source.</p>
+        <label>SnapServe API key<input id="apiKeyInput" name="apiKey" type="password" autocomplete="off"
+            placeholder="Paste your API key"></label>
+        <button class="primary" type="submit">Save API key</button>
       </form>
     </dialog>
     <script src="app.js"></script>
