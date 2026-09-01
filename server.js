@@ -34,6 +34,9 @@ async function proxy(response, target, options = {}) {
 }
 
 const server = http.createServer(async (request, response) => {
+    if (request.method === 'GET' && (request.url === '/' || request.url === '/health')) {
+        return sendJson(response, 200, { service: 'attendly-relay', status: 'ok' });
+    }
     if (request.method === 'OPTIONS') {
         response.writeHead(204, {
             'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
