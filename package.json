@@ -1,0 +1,12 @@
+{
+    "name": "attendly-relay",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Server-side SnapServe relay for the Attendly GitHub Pages UI",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}
