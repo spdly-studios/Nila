@@ -276,6 +276,7 @@ select {
 .history-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
 .history-toolbar input, .history-toolbar select { min-height:42px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
 .history-toolbar input { flex:1 1 260px; }
+.panel-head button[onclick="loadCalls()"] { display:none; }
 .call-cards { display:grid; gap:12px; }
 .call-card { width:100%; padding:17px 18px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); text-align:left; transition:.15s ease; }
 .call-card { cursor:pointer; }
