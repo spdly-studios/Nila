@@ -22,9 +22,13 @@ function persistCalls() { atomicWrite(storeFile, JSON.stringify([...callStore.va
 async function refreshCall(id, existing) {
     if (!apiKey) return existing;
     try {
-        const response = await fetch(`${snapServeBase}/calls/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${apiKey}` } });
-        if (!response.ok) return existing;
-        const latest = await response.json(); const merged = { ...existing, ...latest, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
+        const headers = { Authorization: `Bearer ${apiKey}` };
+        const get = async suffix => { const response = await fetch(`${snapServeBase}/calls/${encodeURIComponent(id)}${suffix}`, { headers }); return response.ok ? response.json() : null; };
+        const getAgent = async agentId => { const response = await fetch(`${snapServeBase}/agents/${encodeURIComponent(agentId)}`, { headers }); return response.ok ? response.json() : null; };
+        const latest = await get('');
+        if (!latest) return existing;
+        const [logs, disposition, memory, recording, agent] = await Promise.all([get('/logs'), get('/disposition'), get('/caller-memory'), get('/meeting-recording'), latest.agentId ? getAgent(latest.agentId) : null]);
+        const merged = { ...existing, ...latest, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
     } catch { return existing; }
 }
 function persistAttendance() { atomicWrite(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
@@ -83,6 +87,9 @@ const server = http.createServer(async (request, response) => {
         try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
     }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
+        if (requestUrl.searchParams.get('refresh') === '1' && apiKey) {
+            try { const upstream = await fetch(`${snapServeBase}/calls`, { headers: { Authorization: `Bearer ${apiKey}` } }); if (upstream.ok) { const body = await upstream.json(); const remote = Array.isArray(body) ? body : body.calls || body.data || []; remote.forEach(call => { const id = call.id || call.callId; if (id) callStore.set(String(id), { ...(callStore.get(String(id)) || {}), ...call, id: String(id) }); }); } } catch { /* retain local records */ }
+        }
         const records = requestUrl.searchParams.get('refresh') === '1' ? await Promise.all([...callStore.values()].map(call => refreshCall(call.id, call))) : [...callStore.values()];
         persistCalls(); return sendJson(response, 200, records.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))));
     }
