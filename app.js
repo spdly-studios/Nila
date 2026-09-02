@@ -1,3 +1,4 @@
+window.addEventListener('error', event => console.error('[Attendly]', event.error || event.message)); window.addEventListener('unhandledrejection', event => console.error('[Attendly]', event.reason));
 const SNAP_SERVE = { agentId: 920, agentName: 'Nila', demoMode: false };
 const RELAY_URL_STORAGE = 'attendly-snapserve-relay-url';
 const students = [{ name: 'Aarav Mehta', roll: '08', pname: 'Rakesh Mehta', phone: '8637488905', present: true }, { name: 'Diya Kapoor', roll: '11', pname: 'Neha Kapoor', phone: '8637488905', present: true }, { name: 'Kabir Shah', roll: '14', pname: 'Priya Shah', phone: '8637488905', present: false }, { name: 'Meera Iyer', roll: '18', pname: 'Suresh Iyer', phone: '8637488905', present: true }, { name: 'Rohan Verma', roll: '21', pname: 'Anita Verma', phone: '8637488905', present: false }, { name: 'Sana Khan', roll: '24', pname: 'Nadia Khan', phone: '8637488905', present: false }];
