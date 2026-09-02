@@ -173,8 +173,9 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === 'POST' && requestUrl.pathname.match(/^\/api\/calls\/[^/]+\/analyze$/)) {
         applySessionAI(request.headers);
-        const id = requestUrl.pathname.split('/')[3]; const existing = callStore.get(id);
-        if (!existing) return sendJson(response, 404, { error: 'Call not found.' });
+        const id = requestUrl.pathname.split('/')[3]; let existing = callStore.get(id);
+        if (!existing && apiKey) { try { const upstream = await fetch(`${snapServeBase}/calls/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${apiKey}` } }); if (upstream.ok) { existing = { ...(await upstream.json()), id }; callStore.set(id, existing); } } catch (error) { appendLog('ai.manual_lookup_error', { id, message: error.message }); } }
+        if (!existing) return sendJson(response, 404, { error: 'Call not found in SnapServe.' });
         const record = await refreshCall(id, existing); persistCalls(); appendLog('ai.analysis_manual', { id }); return sendJson(response, 200, record);
     }
     if (request.method === 'GET' && requestUrl.pathname.startsWith('/api/calls/')) {
