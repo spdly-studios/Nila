@@ -68,6 +68,7 @@ const server = http.createServer(async (request, response) => {
         return response.end();
     }
     const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+    if (request.method === 'GET' && requestUrl.pathname === '/api/calls') return sendJson(response, 200, [...callStore.values()].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))));
     if (request.method === 'GET' && requestUrl.pathname === '/api/attendance') return sendJson(response, 200, attendanceStore);
     if (request.method === 'POST' && requestUrl.pathname === '/api/attendance') {
         let body = ''; for await (const chunk of request) body += chunk;
