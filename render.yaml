@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: nila-relay
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: nila-call-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: SNAPSERVE_API_KEY
+        sync: false
+      - key: SNAPSERVE_WEBHOOK_SECRET
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false
