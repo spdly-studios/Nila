@@ -1059,7 +1059,8 @@ h2 {
     border-radius: 8px;
     transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
 }
-    font-size: 0;
+
+font-size: 0;
 }
 
 .brand-mark::after {
@@ -1067,201 +1068,202 @@ h2 {
     display: block;
     font: 700 19px/1 'DM Mono', 'Courier New', monospace;
     transform: translateY(-1px);
-.primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(31, 53, 64, .12);
-}
 
-.primary {
-    background: var(--green);
-}
-
-.summary {
-    margin: 30px 0 24px;
-    padding: 19px 0;
-}
-
-.summary strong {
-    font-size: 28px;
-}
-
-th {
-    padding-bottom: 12px;
-    color: #819095;
-    font-size: 9px;
-}
-
-td {
-    padding: 16px 10px;
-}
-
-tr:hover td {
-    background: #f7fbf9;
-}
-
-.status {
-    min-height: 32px;
-    transition: transform .15s ease, box-shadow .15s ease;
-}
-
-.status:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(31, 53, 64, .1);
-}
-
-.panel-foot {
-    margin-top: 18px;
-    padding-top: 20px;
-}
-
-.badge,
-.call-status {
-    border: 1px solid #f0c7bc;
-    background: #fff5f1;
-}
-
-.call-intro {
-    padding: 62px 18px 70px;
-}
-
-.phone-art {
-    width: 60px;
-    height: 60px;
-    border: 7px solid #eef8f3;
-    box-shadow: 0 0 0 1px #cce7d9;
-}
-
-.api-note {
-    border-radius: 9px;
-}
-
-.history-toolbar input,
-.history-toolbar select,
-input {
-    min-height: 44px;
-    border-color: #cbdad9;
-    border-radius: 8px;
-    background: #fbfdfc;
-}
-
-.history-toolbar input:focus,
-.history-toolbar select:focus,
-input:focus,
-select:focus,
-button:focus-visible,
-a:focus-visible {
-    outline: 3px solid rgba(215, 102, 77, .28);
-    outline-offset: 2px;
-}
-
-.call-card {
-    border-radius: 10px;
-    box-shadow: 0 4px 14px rgba(31, 53, 64, .03);
-}
-
-.insight {
-    border-radius: 10px;
-    background: #fbfdfc;
-}
-
-footer {
-    padding-top: 25px;
-}
-
-@media (max-width: 850px) {
-    .sidebar {
-        width: 205px;
+    .primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(31, 53, 64, .12);
     }
 
-    .content {
-        padding: 34px 24px 24px;
-    }
-}
-
-@media (max-width: 580px) {
-    .sidebar {
-        width: 100%;
-        padding: 16px 14px;
-    }
-
-    .brand {
-        padding: 0 4px;
-    }
-
-    .eyebrow {
-        margin: 20px 0 8px 4px;
-    }
-
-    nav {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 4px;
-    }
-
-    nav a {
-        flex-direction: column;
-        min-height: 58px;
-        padding: 8px 3px;
-        font-size: 10px;
-        line-height: 1.15;
-    }
-
-    nav a span {
-        font-size: 16px;
-    }
-
-    .content {
-        padding: 28px 14px 20px;
-    }
-
-    .topbar {
-        min-height: 0;
-    }
-
-    h1 {
-        font-size: 32px;
-    }
-
-    .class-strip {
-        margin-top: 28px;
-        padding: 14px;
-    }
-
-    .attendance-panel,
-    .call-panel,
-    .analytics-grid .panel,
-    .content>.panel {
-        padding: 22px 18px;
-    }
-
-    .head-actions {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .head-actions .secondary {
-        flex: 1;
-    }
-
-    .save-state {
-        white-space: nowrap;
-    }
-
-    .panel-foot {
-        margin: 18px -18px 0;
-        padding: 18px;
+    .primary {
+        background: var(--green);
     }
 
     .summary {
-        gap: 18px 12px;
+        margin: 30px 0 24px;
+        padding: 19px 0;
     }
 
     .summary strong {
-        font-size: 25px;
+        font-size: 28px;
     }
 
-    th,
-    td {
-        padding-left: 7px;
-        padding-right: 7px;
+    th {
+        padding-bottom: 12px;
+        color: #819095;
+        font-size: 9px;
     }
-}
+
+    td {
+        padding: 16px 10px;
+    }
+
+    tr:hover td {
+        background: #f7fbf9;
+    }
+
+    .status {
+        min-height: 32px;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .status:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(31, 53, 64, .1);
+    }
+
+    .panel-foot {
+        margin-top: 18px;
+        padding-top: 20px;
+    }
+
+    .badge,
+    .call-status {
+        border: 1px solid #f0c7bc;
+        background: #fff5f1;
+    }
+
+    .call-intro {
+        padding: 62px 18px 70px;
+    }
+
+    .phone-art {
+        width: 60px;
+        height: 60px;
+        border: 7px solid #eef8f3;
+        box-shadow: 0 0 0 1px #cce7d9;
+    }
+
+    .api-note {
+        border-radius: 9px;
+    }
+
+    .history-toolbar input,
+    .history-toolbar select,
+    input {
+        min-height: 44px;
+        border-color: #cbdad9;
+        border-radius: 8px;
+        background: #fbfdfc;
+    }
+
+    .history-toolbar input:focus,
+    .history-toolbar select:focus,
+    input:focus,
+    select:focus,
+    button:focus-visible,
+    a:focus-visible {
+        outline: 3px solid rgba(215, 102, 77, .28);
+        outline-offset: 2px;
+    }
+
+    .call-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(31, 53, 64, .03);
+    }
+
+    .insight {
+        border-radius: 10px;
+        background: #fbfdfc;
+    }
+
+    footer {
+        padding-top: 25px;
+    }
+
+    @media (max-width: 850px) {
+        .sidebar {
+            width: 205px;
+        }
+
+        .content {
+            padding: 34px 24px 24px;
+        }
+    }
+
+    @media (max-width: 580px) {
+        .sidebar {
+            width: 100%;
+            padding: 16px 14px;
+        }
+
+        .brand {
+            padding: 0 4px;
+        }
+
+        .eyebrow {
+            margin: 20px 0 8px 4px;
+        }
+
+        nav {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+        }
+
+        nav a {
+            flex-direction: column;
+            min-height: 58px;
+            padding: 8px 3px;
+            font-size: 10px;
+            line-height: 1.15;
+        }
+
+        nav a span {
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 28px 14px 20px;
+        }
+
+        .topbar {
+            min-height: 0;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        .class-strip {
+            margin-top: 28px;
+            padding: 14px;
+        }
+
+        .attendance-panel,
+        .call-panel,
+        .analytics-grid .panel,
+        .content>.panel {
+            padding: 22px 18px;
+        }
+
+        .head-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .head-actions .secondary {
+            flex: 1;
+        }
+
+        .save-state {
+            white-space: nowrap;
+        }
+
+        .panel-foot {
+            margin: 18px -18px 0;
+            padding: 18px;
+        }
+
+        .summary {
+            gap: 18px 12px;
+        }
+
+        .summary strong {
+            font-size: 25px;
+        }
+
+        th,
+        td {
+            padding-left: 7px;
+            padding-right: 7px;
+        }
+    }
