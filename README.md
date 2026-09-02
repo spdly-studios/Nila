@@ -4,6 +4,13 @@ Attendly is a static attendance UI with a server-side SnapServe relay.
 
 See [FEATURES.md](FEATURES.md) for the complete implemented feature and operations guide.
 
+## Project structure
+
+- `css/` contains the shared dashboard stylesheet and pitch deck stylesheet.
+- `js/` contains the dashboard, analytics, history, settings, and pitch deck scripts.
+- `docs/project-structure.md` contains the detailed directory and page mapping.
+- Root HTML files are the pages served by the relay.
+
 ## Run the relay
 
 Use Node.js 18 or newer. Set the API key in the server environment, never in the browser:
