@@ -28,7 +28,8 @@ async function refreshCall(id, existing) {
         const latest = await get('');
         if (!latest) return existing;
         const [logs, disposition, memory, recording, agent] = await Promise.all([get('/logs'), get('/disposition'), get('/caller-memory'), get('/meeting-recording'), latest.agentId ? getAgent(latest.agentId) : null]);
-        const merged = { ...existing, ...latest, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
+        const variables = existing.request?.variables || {};
+        const merged = { ...existing, ...latest, identity: { studentName: variables.studentName || variables.name || existing.studentName || null, parentName: variables.parentName || variables.pname || existing.parentName || null, phone: variables.phone || existing.phone || latest.toNumber || null }, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
     } catch { return existing; }
 }
 function persistAttendance() { atomicWrite(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
