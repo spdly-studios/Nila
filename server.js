@@ -8,6 +8,9 @@ const port = Number(process.env.PORT || 8787);
 const snapServeBase = 'https://app.snapserve.ai/api';
 const apiKey = process.env.SNAPSERVE_API_KEY;
 const webhookSecret = process.env.SNAPSERVE_WEBHOOK_SECRET;
+const aiEndpoint = process.env.AI_ENDPOINT;
+const aiApiKey = process.env.AI_API_KEY;
+const aiModel = process.env.AI_MODEL || 'nemotron-3-embed-1b';
 const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 // Replace with a database in production; this keeps webhook results available for the running relay.
 const callStore = new Map();
@@ -29,11 +32,19 @@ async function refreshCall(id, existing) {
         if (!latest) return existing;
         const [logs, disposition, memory, recording, agent] = await Promise.all([get('/logs'), get('/disposition'), get('/caller-memory'), get('/meeting-recording'), latest.agentId ? getAgent(latest.agentId) : null]);
         const variables = existing.request?.variables || {};
-        const merged = { ...existing, ...latest, identity: { studentName: variables.studentName || variables.name || existing.studentName || latest.metadata?.callVariables?.name || null, parentName: variables.parentName || variables.pname || existing.parentName || latest.metadata?.callVariables?.pname || null, phone: variables.phone || existing.phone || latest.toNumber || latest.fromNumber || null }, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
+        const merged = { ...existing, ...latest, identity: { studentName: variables.studentName || variables.name || existing.studentName || latest.metadata?.callVariables?.name || null, parentName: variables.parentName || variables.pname || existing.parentName || latest.metadata?.callVariables?.pname || null, phone: variables.phone || existing.phone || latest.toNumber || latest.fromNumber || null }, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() };
+        merged.aiAnalysis = await analyzeTranscript(latest.transcript, existing);
+        callStore.set(id, merged); return merged;
     } catch { return existing; }
 }
 function persistAttendance() { atomicWrite(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
 function appendLog(type, data = {}) { fs.appendFileSync(logFile, JSON.stringify({ type, at: new Date().toISOString(), ...data }) + '\n'); }
+async function analyzeTranscript(transcript, existing = {}) {
+    if (!aiEndpoint || !aiApiKey || !transcript) return existing.aiAnalysis || null;
+    const hash = crypto.createHash('sha256').update(transcript).digest('hex');
+    if (existing.aiAnalysis?.transcriptHash === hash) return existing.aiAnalysis;
+    try { const response = await fetch(aiEndpoint, { method: 'POST', headers: { Authorization: `Bearer ${aiApiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: aiModel, temperature: 0, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: 'Return JSON only with mainReason, tags, confidence. Extract the main factual reason for absence from this transcript. Do not infer. If absent reason is not provided, use mainReason No reason provided and tag no_reason_provided.' }, { role: 'user', content: transcript }] }) }); if (!response.ok) throw new Error(`AI endpoint returned ${response.status}`); const body = await response.json(); const content = body.choices?.[0]?.message?.content || body.output_text || body.result || body; const result = typeof content === 'string' ? JSON.parse(content.replace(/^```json\s*|\s*```$/g, '')) : content; return { transcriptHash: hash, mainReason: String(result.mainReason || 'No reason provided'), tags: Array.isArray(result.tags) ? result.tags.map(tag => String(tag).toLowerCase().replace(/[^a-z0-9_]+/g, '_')).filter(Boolean).slice(0, 8) : [], confidence: Number(result.confidence) || 0, model: aiModel, analyzedAt: new Date().toISOString() }; } catch (error) { appendLog('ai.analysis_error', { message: error.message, model: aiModel }); return existing.aiAnalysis || null; }
+}
 function verifiedWebhook(headers, rawBody) {
     if (!webhookSecret) return true;
     const timestamp = headers['x-snapserve-timestamp'];

@@ -269,6 +269,10 @@ select {
 .content > .panel {
     padding: 27px;
 }
+.history-filters { display:flex; gap:10px; flex-wrap:wrap; margin:22px 0 14px; }
+.history-filters input, .history-filters select { min-height:40px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+.history-filters input { flex:1 1 260px; }
+.tag { display:inline-block; margin:3px 3px 0 0; padding:3px 7px; border-radius:999px; color:var(--green); background:var(--mint); font-size:10px; }
 .analytics-grid .panel {
     padding: 27px;
 }
