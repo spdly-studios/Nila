@@ -264,6 +264,9 @@ select {
 .call-panel {
     padding: 27px;
 }
+.analytics-grid .panel {
+    padding: 27px;
+}
 .analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
 .analytics-grid .wide { grid-column:1 / -1; }
 .insight-list { display:grid; gap:12px; }

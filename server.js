@@ -17,6 +17,14 @@ try { for (const record of JSON.parse(fs.readFileSync(storeFile, 'utf8'))) callS
 const attendanceFile = path.join(process.env.DATA_DIR || __dirname, 'attendance.json');
 try { attendanceStore.push(...JSON.parse(fs.readFileSync(attendanceFile, 'utf8'))); } catch { /* first run */ }
 function persistCalls() { fs.writeFileSync(storeFile, JSON.stringify([...callStore.values()], null, 2)); }
+async function refreshCall(id, existing) {
+    if (!apiKey) return existing;
+    try {
+        const response = await fetch(`${snapServeBase}/calls/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${apiKey}` } });
+        if (!response.ok) return existing;
+        const latest = await response.json(); const merged = { ...existing, ...latest, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
+    } catch { return existing; }
+}
 function persistAttendance() { fs.writeFileSync(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
 function verifiedWebhook(headers, rawBody) {
     if (!webhookSecret) return true;
@@ -68,7 +76,10 @@ const server = http.createServer(async (request, response) => {
         return response.end();
     }
     const requestUrl = new URL(request.url, `http://${request.headers.host}`);
-    if (request.method === 'GET' && requestUrl.pathname === '/api/calls') return sendJson(response, 200, [...callStore.values()].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))));
+    if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
+        const records = requestUrl.searchParams.get('refresh') === '1' ? await Promise.all([...callStore.values()].map(call => refreshCall(call.id, call))) : [...callStore.values()];
+        persistCalls(); return sendJson(response, 200, records.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))));
+    }
     if (request.method === 'GET' && requestUrl.pathname === '/api/attendance') return sendJson(response, 200, attendanceStore);
     if (request.method === 'POST' && requestUrl.pathname === '/api/attendance') {
         let body = ''; for await (const chunk of request) body += chunk;
