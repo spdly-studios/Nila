@@ -19,3 +19,5 @@ The relay implements `POST /api/calls/outbound`, `POST /api/webhooks/snapserve`,
 Use [SNAPSERVE_AGENT_INSTRUCTIONS.md](SNAPSERVE_AGENT_INSTRUCTIONS.md) as the Nila agent system prompt in SnapServe. It keeps the website’s student/parent identity fields aligned with SnapServe’s prompt variables and stored webhook data.
 
 Inbound calls are included automatically when Call History is refreshed: the relay imports SnapServe’s full call list regardless of direction and stores `direction`, caller number, student identity, transcript, summary, disposition, logs, memory, recording metadata, and webhook data.
+
+Call-reason analysis uses NVIDIA’s OpenAI-compatible API by default. Set `AI_API_KEY` to the same NVIDIA key. Optional overrides are `AI_ENDPOINT` (default `https://integrate.api.nvidia.com/v1/chat/completions`) and `AI_MODEL` (default `meta/muse-glimmer-30b`). The analyzer is re-run automatically when the model changes, and its short main-reason label is kept separate from SnapServe’s full call summary.
