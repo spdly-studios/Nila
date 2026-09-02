@@ -11,9 +11,13 @@ const webhookSecret = process.env.SNAPSERVE_WEBHOOK_SECRET;
 const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 // Replace with a database in production; this keeps webhook results available for the running relay.
 const callStore = new Map();
+const attendanceStore = [];
 const storeFile = path.join(process.env.DATA_DIR || __dirname, 'calls.json');
 try { for (const record of JSON.parse(fs.readFileSync(storeFile, 'utf8'))) callStore.set(record.id, record); } catch { /* first run */ }
+const attendanceFile = path.join(process.env.DATA_DIR || __dirname, 'attendance.json');
+try { attendanceStore.push(...JSON.parse(fs.readFileSync(attendanceFile, 'utf8'))); } catch { /* first run */ }
 function persistCalls() { fs.writeFileSync(storeFile, JSON.stringify([...callStore.values()], null, 2)); }
+function persistAttendance() { fs.writeFileSync(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
 function verifiedWebhook(headers, rawBody) {
     if (!webhookSecret) return true;
     const timestamp = headers['x-snapserve-timestamp'];
@@ -64,6 +68,12 @@ const server = http.createServer(async (request, response) => {
         return response.end();
     }
     const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+    if (request.method === 'GET' && requestUrl.pathname === '/api/attendance') return sendJson(response, 200, attendanceStore);
+    if (request.method === 'POST' && requestUrl.pathname === '/api/attendance') {
+        let body = ''; for await (const chunk of request) body += chunk;
+        try { const record = JSON.parse(body || '{}'); if (!record.date || !Array.isArray(record.students)) return sendJson(response, 400, { error: 'date and students are required' }); attendanceStore.push(record); persistAttendance(); return sendJson(response, 201, record); }
+        catch (error) { return sendJson(response, 400, { error: `Invalid attendance record: ${error.message}` }); }
+    }
     if (request.method === 'GET' && !requestUrl.pathname.startsWith('/api/')) {
         const file = requestUrl.pathname === '/' ? 'index.html' : requestUrl.pathname.slice(1);
         const safe = path.normalize(file);
