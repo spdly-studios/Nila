@@ -273,6 +273,20 @@ select {
 .history-filters input, .history-filters select { min-height:40px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
 .history-filters input { flex:1 1 260px; }
 .tag { display:inline-block; margin:3px 3px 0 0; padding:3px 7px; border-radius:999px; color:var(--green); background:var(--mint); font-size:10px; }
+.history-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+.history-toolbar input, .history-toolbar select { min-height:42px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
+.history-toolbar input { flex:1 1 260px; }
+.call-cards { display:grid; gap:12px; }
+.call-card { width:100%; padding:17px 18px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); text-align:left; transition:.15s ease; }
+.call-card:hover { border-color:#9fcbbb; box-shadow:0 8px 22px rgba(35,61,67,.08); transform:translateY(-1px); }
+.call-card-top, .call-card-bottom { display:flex; justify-content:space-between; gap:14px; align-items:center; }
+.call-card-parent { margin:7px 0 13px; color:var(--muted); font-size:13px; }
+.call-card-bottom { color:var(--muted); font-size:12px; }
+.call-status { padding:4px 8px; border-radius:999px; background:var(--mint); color:var(--green); font-size:11px; }
+#callDetail { width:min(720px,calc(100% - 32px)); padding:28px; border:0; border-radius:14px; box-shadow:var(--shadow); }
+#callDetail::backdrop { background:rgba(23,33,43,.45); }
+#callDetail h3 { margin:20px 0 6px; font-size:14px; }
+#detailTranscript { max-height:320px; overflow:auto; white-space:pre-wrap; padding:14px; border-radius:8px; background:#f4f8f6; font:12px/1.55 monospace; }
 .analytics-grid .panel {
     padding: 27px;
 }

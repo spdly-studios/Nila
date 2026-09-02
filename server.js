@@ -31,9 +31,10 @@ async function refreshCall(id, existing) {
         const latest = await get('');
         if (!latest) return existing;
         const [logs, disposition, memory, recording, agent] = await Promise.all([get('/logs'), get('/disposition'), get('/caller-memory'), get('/meeting-recording'), latest.agentId ? getAgent(latest.agentId) : null]);
-        const variables = existing.request?.variables || {};
-        const merged = { ...existing, ...latest, identity: { studentName: variables.studentName || variables.name || existing.studentName || latest.metadata?.callVariables?.name || null, parentName: variables.parentName || variables.pname || existing.parentName || latest.metadata?.callVariables?.pname || null, phone: variables.phone || existing.phone || latest.toNumber || latest.fromNumber || null }, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() };
+        const variables = callVariables({ ...existing, ...latest });
+        const merged = { ...existing, ...latest, identity: { studentName: variables.studentName || variables.name || existing.identity?.studentName || null, parentName: variables.parentName || variables.pname || existing.identity?.parentName || null, phone: variables.phone || existing.identity?.phone || latest.toNumber || latest.fromNumber || null }, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() };
         merged.aiAnalysis = await analyzeTranscript(latest.transcript, existing);
+        if (!merged.aiAnalysis) merged.aiAnalysis = fallbackAnalysis(merged);
         callStore.set(id, merged); return merged;
     } catch { return existing; }
 }
@@ -45,6 +46,8 @@ async function analyzeTranscript(transcript, existing = {}) {
     if (existing.aiAnalysis?.transcriptHash === hash) return existing.aiAnalysis;
     try { const response = await fetch(aiEndpoint, { method: 'POST', headers: { Authorization: `Bearer ${aiApiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: aiModel, temperature: 0, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: 'Return JSON only with mainReason, tags, confidence. Extract the main factual reason for absence from this transcript. Do not infer. If absent reason is not provided, use mainReason No reason provided and tag no_reason_provided.' }, { role: 'user', content: transcript }] }) }); if (!response.ok) throw new Error(`AI endpoint returned ${response.status}`); const body = await response.json(); const content = body.choices?.[0]?.message?.content || body.output_text || body.result || body; const result = typeof content === 'string' ? JSON.parse(content.replace(/^```json\s*|\s*```$/g, '')) : content; return { transcriptHash: hash, mainReason: String(result.mainReason || 'No reason provided'), tags: Array.isArray(result.tags) ? result.tags.map(tag => String(tag).toLowerCase().replace(/[^a-z0-9_]+/g, '_')).filter(Boolean).slice(0, 8) : [], confidence: Number(result.confidence) || 0, model: aiModel, analyzedAt: new Date().toISOString() }; } catch (error) { appendLog('ai.analysis_error', { message: error.message, model: aiModel }); return existing.aiAnalysis || null; }
 }
+function callVariables(record) { let metadata = record.metadata; if (typeof metadata === 'string') { try { metadata = JSON.parse(metadata); } catch { metadata = null; } } return record.request?.variables || metadata?.callVariables || {}; }
+function fallbackAnalysis(record) { const text = `${record.callSummary || ''} ${record.dispositionResult?.summary || ''}`.toLowerCase(); const tags = []; if (/sick|ill|health|fever|hospital|doctor|medical/.test(text)) tags.push('health_issue'); if (/travel|outstation|trip|village/.test(text)) tags.push('travel'); if (/family|personal|function|wedding/.test(text)) tags.push('family_or_personal'); if (/transport|bus|traffic|vehicle/.test(text)) tags.push('transport'); if (/no reason|without a reason|reason.*not/.test(text) || !text.trim()) tags.push('no_reason_provided'); return { mainReason: record.callSummary || record.dispositionResult?.summary || 'Reason not available', tags, confidence: 0, source: 'fallback' }; }
 function verifiedWebhook(headers, rawBody) {
     if (!webhookSecret) return true;
     const timestamp = headers['x-snapserve-timestamp'];
