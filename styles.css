@@ -44,6 +44,7 @@ button {
     background: var(--navy);
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .brand {
@@ -84,6 +85,7 @@ nav a {
     color: #b9c9c8;
     text-decoration: none;
     font-size: 14px;
+    white-space: nowrap;
 }
 
 nav a span {
@@ -262,6 +264,9 @@ select {
 }
 
 .call-panel {
+    padding: 27px;
+}
+.content > .panel {
     padding: 27px;
 }
 .analytics-grid .panel {
