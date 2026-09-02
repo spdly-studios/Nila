@@ -19,3 +19,13 @@ services:
         sync: false
       - key: ALLOWED_ORIGIN
         sync: false
+      - key: DATA_DIR
+        value: /var/data
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_ENDPOINT
+        value: https://integrate.api.nvidia.com/v1/chat/completions
+      - key: AI_MODEL
+        value: meta/muse-glimmer-30b
+      - key: AI_TAG_MODEL
+        value: nemotron-3-embed-1b
