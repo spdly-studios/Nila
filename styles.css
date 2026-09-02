@@ -273,6 +273,9 @@ select {
 .history-filters input, .history-filters select { min-height:40px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
 .history-filters input { flex:1 1 260px; }
 .tag { display:inline-block; margin:3px 3px 0 0; padding:3px 7px; border-radius:999px; color:var(--green); background:var(--mint); font-size:10px; }
+.export-link { text-decoration:none; display:inline-flex; align-items:center; }
+.risk-list { display:grid; gap:8px; margin-top:18px; }
+.risk-list div { display:flex; justify-content:space-between; padding:10px 12px; border-radius:8px; background:#fff7ed; color:#92400e; }
 .history-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
 .history-toolbar input, .history-toolbar select { min-height:42px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); }
 .history-toolbar input { flex:1 1 260px; }

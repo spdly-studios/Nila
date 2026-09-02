@@ -114,6 +114,8 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && requestUrl.pathname === '/api/logs') {
         try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
     }
+    if (request.method === 'GET' && requestUrl.pathname === '/api/diagnostics') return sendJson(response, 200, { snapserveConfigured: Boolean(apiKey), aiConfigured: Boolean(aiApiKey), webhookConfigured: Boolean(webhookSecret), callsStored: callStore.size, attendanceDays: attendanceStore.length, lastWebhook: [...callStore.values()].map(c => c.updatedAt).sort().pop() || null });
+    if (request.method === 'GET' && requestUrl.pathname === '/api/calls/export.csv') { const rows = [...callStore.values()].map(c => { const i=c.identity||{}, a=c.aiAnalysis||{}; return [c.id, i.studentName, i.parentName, c.direction, c.status, c.createdAt, c.endedAt, a.mainReason, (a.tags||[]).join('|'), a.summary, c.callSummary]; }); const csv = [['id','student','parent','direction','status','createdAt','endedAt','mainReason','tags','parentSummary','snapserveSummary'], ...rows].map(row => row.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'); response.writeHead(200, { 'Content-Type':'text/csv; charset=utf-8', 'Content-Disposition':'attachment; filename="attendly-calls.csv"' }); return response.end(csv); }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
         applySessionAI(request.headers);
         if (requestUrl.searchParams.get('refresh') === '1' && apiKey) {
