@@ -15,8 +15,8 @@ let aiTagModel = process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b';
 const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 // Replace with a database in production; this keeps webhook results available for the running relay.
 const callStore = new Map();
-process.on('uncaughtException', error => { console.error('[Attendly] uncaughtException', error); try { appendLog('process.uncaught_exception', { message: error.message, stack: error.stack }); } catch {} });
-process.on('unhandledRejection', reason => { console.error('[Attendly] unhandledRejection', reason); try { appendLog('process.unhandled_rejection', { message: String(reason?.message || reason) }); } catch {} });
+process.on('uncaughtException', error => { console.error('[Attendly] uncaughtException', error); try { appendLog('process.uncaught_exception', { message: error.message, stack: error.stack }); } catch { } });
+process.on('unhandledRejection', reason => { console.error('[Attendly] unhandledRejection', reason); try { appendLog('process.unhandled_rejection', { message: String(reason?.message || reason) }); } catch { } });
 const attendanceStore = [];
 const storeFile = path.join(process.env.DATA_DIR || __dirname, 'calls.json');
 try { for (const record of JSON.parse(fs.readFileSync(storeFile, 'utf8'))) callStore.set(record.id, record); } catch { /* first run */ }
@@ -75,7 +75,8 @@ function verifiedWebhook(headers, rawBody) {
 function sendJson(response, status, body) {
     response.writeHead(status, {
         'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, X-AI-Endpoint, X-AI-Model, X-AI-Tag-Model',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Content-Type': 'application/json'
     });
     response.end(JSON.stringify(body));
@@ -107,7 +108,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'OPTIONS') {
         response.writeHead(204, {
             'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
-            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Headers': 'Content-Type, X-AI-Endpoint, X-AI-Model, X-AI-Tag-Model',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
         });
         return response.end();
@@ -117,7 +118,7 @@ const server = http.createServer(async (request, response) => {
         try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
     }
     if (request.method === 'GET' && requestUrl.pathname === '/api/diagnostics') return sendJson(response, 200, { snapserveConfigured: Boolean(apiKey), aiConfigured: Boolean(aiApiKey), webhookConfigured: Boolean(webhookSecret), callsStored: callStore.size, attendanceDays: attendanceStore.length, lastWebhook: [...callStore.values()].map(c => c.updatedAt).sort().pop() || null });
-    if (request.method === 'GET' && requestUrl.pathname === '/api/calls/export.csv') { const rows = [...callStore.values()].map(c => { const i=c.identity||{}, a=c.aiAnalysis||{}; return [c.id, i.studentName, i.parentName, c.direction, c.status, c.createdAt, c.endedAt, a.mainReason, (a.tags||[]).join('|'), a.summary, c.callSummary]; }); const csv = [['id','student','parent','direction','status','createdAt','endedAt','mainReason','tags','parentSummary','snapserveSummary'], ...rows].map(row => row.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n'); response.writeHead(200, { 'Content-Type':'text/csv; charset=utf-8', 'Content-Disposition':'attachment; filename="attendly-calls.csv"' }); return response.end(csv); }
+    if (request.method === 'GET' && requestUrl.pathname === '/api/calls/export.csv') { const rows = [...callStore.values()].map(c => { const i = c.identity || {}, a = c.aiAnalysis || {}; return [c.id, i.studentName, i.parentName, c.direction, c.status, c.createdAt, c.endedAt, a.mainReason, (a.tags || []).join('|'), a.summary, c.callSummary]; }); const csv = [['id', 'student', 'parent', 'direction', 'status', 'createdAt', 'endedAt', 'mainReason', 'tags', 'parentSummary', 'snapserveSummary'], ...rows].map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n'); response.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="attendly-calls.csv"' }); return response.end(csv); }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
         applySessionAI(request.headers);
         if (requestUrl.searchParams.get('refresh') === '1' && apiKey) {
@@ -129,7 +130,7 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && requestUrl.pathname === '/api/attendance') return sendJson(response, 200, attendanceStore);
     if (request.method === 'POST' && requestUrl.pathname === '/api/attendance') {
         let body = ''; for await (const chunk of request) body += chunk;
-        try { const record = JSON.parse(body || '{}'); if (!record.date || !Array.isArray(record.students)) return sendJson(response, 400, { error: 'date and students are required' }); record.id ||= crypto.randomUUID(); record.savedAt = new Date().toISOString(); attendanceStore.push(record); persistAttendance(); appendLog('attendance.saved', { id: record.id, date: record.date, className: record.className, studentCount: record.students.length }); return sendJson(response, 201, record); }
+        try { const record = JSON.parse(body || '{}'); if (!/^\d{4}-\d{2}-\d{2}$/.test(record.date) || !/^[0-9]+-[A-Z]$/.test(record.className || '') || !Array.isArray(record.students) || !record.students.length || record.students.some(student => typeof student?.name !== 'string' || typeof student?.roll !== 'string' || typeof student?.present !== 'boolean')) return sendJson(response, 400, { error: 'date, className, and valid students are required' }); if (attendanceStore.some(saved => saved.date === record.date && saved.className === record.className)) return sendJson(response, 409, { error: 'Attendance is already saved for this class and date.' }); record.id ||= crypto.randomUUID(); record.savedAt = new Date().toISOString(); attendanceStore.push(record); persistAttendance(); appendLog('attendance.saved', { id: record.id, date: record.date, className: record.className, studentCount: record.students.length }); return sendJson(response, 201, record); }
         catch (error) { appendLog('attendance.error', { message: error.message }); return sendJson(response, 400, { error: `Invalid attendance record: ${error.message}` }); }
     }
     if (request.method === 'GET' && !requestUrl.pathname.startsWith('/api/')) {
