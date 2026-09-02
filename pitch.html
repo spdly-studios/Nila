@@ -1,10 +1,138 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Attendly — Pitch</title><link rel="stylesheet" href="pitch.css"></head><body><main id="deck" aria-live="polite">
-<section class="slide cover active"><div class="rule"></div><p class="kicker">SPDLY STUDIOS</p><h1>Attendance<br><em>that explains itself.</em></h1><p class="lede">A teacher should not have to guess why a student is absent.</p><div class="cover-card"><small>NILA</small><strong>A calmer<br>follow-up loop</strong></div><footer>Shivaprasad V · attendly</footer></section>
-<section class="slide"><p class="kicker">THE GAP</p><h2>Attendance tells you who is missing.<br><em>It rarely tells you why.</em></h2><div class="two-col"><div><p>For years, schools have recorded absence as a binary mark.</p><ul><li>Reasons disappear into phone calls and scattered notes.</li><li>Patterns across weeks, students, and weekdays stay hidden.</li><li>Teachers are left to chase context manually.</li></ul></div><div class="question"><small>ABSENT</small><b>?</b><span>The missing layer<br>is context.</span></div></div></section>
-<section class="slide"><p class="kicker">THE PRODUCT</p><h2>Attendly closes the loop<br>between absence and action.</h2><p class="lede dark">One classroom workspace records attendance, reaches parents, captures what they say, and surfaces patterns a busy teacher cannot manually calculate.</p><div class="steps"><div><b>01</b><strong>Mark</strong><span>Class register</span></div><div><b>02</b><strong>Reach</strong><span>Nila calls</span></div><div><b>03</b><strong>Understand</strong><span>Parent context</span></div><div><b>04</b><strong>Act</strong><span>Teacher insight</span></div></div></section>
-<section class="slide"><p class="kicker">THE EXPERIENCE</p><h2>One workflow.<br><em>Four moments.</em></h2><div class="timeline"><article><b>01</b><h3>Register</h3><p>Mark attendance by class in seconds.</p></article><article><b>02</b><h3>Connect</h3><p>Nila starts in Tamil and adapts to the parent.</p></article><article><b>03</b><h3>Capture</h3><p>Webhook storage preserves the evidence.</p></article><article><b>04</b><h3>Learn</h3><p>AI extracts reasons and recurring signals.</p></article></div></section>
-<section class="slide"><p class="kicker">THE INTELLIGENCE LAYER</p><h2>The reason is not always<br>in the first sentence.</h2><div class="compare"><div><small>PARENT-ONLY SUMMARY</small><blockquote>“Transport issue affected Meera’s attendance today.”</blockquote></div><div><small>SIGNALS FOR ACTION</small><blockquote>transport · recurring · Wednesday</blockquote></div></div><p class="caption">Original transcript, translated transcript, summary, tags, disposition, and recording metadata remain connected.</p></section>
-<section class="slide"><p class="kicker">TEACHER VALUE</p><h2>Useful before, during,<br><em>and after the school day.</em></h2><div class="value-list"><div><b>Before class</b><span>See who needs follow-up without rebuilding a list.</span></div><div><b>During the day</b><span>Let Nila handle routine conversations consistently.</span></div><div><b>After the call</b><span>Read the main reason—not a wall of transcript.</span></div><div><b>Over time</b><span>Spot recurring weekday, transport, health, or group patterns.</span></div></div></section>
-<section class="slide"><p class="kicker">TRUST BY DESIGN</p><h2>Automation with<br><em>an evidence trail.</em></h2><ul class="trust"><li>Original SnapServe transcript stays available.</li><li>AI analysis uses parent speech—not agent instructions or memory.</li><li>Tamil-first conversations switch only when requested.</li><li>Webhook, sync, analysis, and errors are logged.</li></ul><div class="evidence">source<br><span>↓</span><br>reason<br><span>↓</span><br>action</div></section>
-<section class="slide final"><p class="kicker">LIVE PROOF</p><h2>A working product,<br><em>not a promise.</em></h2><div class="proof"><b>attendly</b><span>AI voice agent: Nila</span><span>Team: SpDly Studios</span><span>Lead: Shivaprasad V</span><a href="https://nila-v80b.onrender.com/history.html" target="_blank">Open live call history ↗</a></div><footer>Make every absence understandable.</footer></section>
-</main><div class="controls"><button id="prev" aria-label="Previous slide">←</button><span><b id="current">01</b> / <b id="total">08</b></span><button id="next" aria-label="Next slide">→</button></div><div id="progress"></div><script src="pitch.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="theme-color" content="#f3efe7">
+        <title>Attendly / Nila — Pitch</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
+            rel="stylesheet">
+        <link rel="stylesheet" href="pitch.css">
+    </head>
+
+    <body>
+        <main id="deck" aria-live="polite">
+            <section class="slide cover active">
+                <div class="slide-orbit" aria-hidden="true"><span></span></div>
+                <div class="topline"><span>SPDLY / 2024—25</span><span>01—08</span></div>
+                <p class="kicker">A FIELD NOTE ON ABSENCE</p>
+                <h1>Attendance<br><em>that explains itself.</em></h1>
+                <p class="lede">A teacher should not have to guess why a student is absent.</p>
+                <div class="cover-card"><small>NILA / VOICE AGENT</small><strong>A calmer<br>follow-up
+                        loop</strong><i>↗</i></div>
+                <footer><span>Shivaprasad V</span><span>Attendly</span></footer>
+            </section>
+            <section class="slide gap">
+                <div class="side-note">THE GAP / 02</div>
+                <p class="kicker">THE GAP</p>
+                <h2>Attendance tells you who is missing.<br><em>It rarely tells you why.</em></h2>
+                <div class="two-col">
+                    <div>
+                        <p>For years, schools have recorded absence as a binary mark.</p>
+                        <ul>
+                            <li>Reasons disappear into phone calls and scattered notes.</li>
+                            <li>Patterns across weeks, students, and weekdays stay hidden.</li>
+                            <li>Teachers are left to chase context manually.</li>
+                        </ul>
+                    </div>
+                    <div class="question"><small>ABSENT</small><b>?</b><span>The missing layer<br>is context.</span>
+                    </div>
+                </div>
+                <div class="margin-number">01</div>
+            </section>
+            <section class="slide product">
+                <div class="topline"><span>THE PRODUCT / 03</span><span>ATTENDLY</span></div>
+                <p class="kicker">THE PRODUCT</p>
+                <h2>Attendly closes the loop<br>between absence and action.</h2>
+                <p class="lede dark">One classroom workspace records attendance, reaches parents, captures what they
+                    say, and surfaces patterns a busy teacher cannot manually calculate.</p>
+                <div class="steps">
+                    <div><b>01</b><strong>Mark</strong><span>Class register</span></div>
+                    <div><b>02</b><strong>Reach</strong><span>Nila calls</span></div>
+                    <div><b>03</b><strong>Understand</strong><span>Parent context</span></div>
+                    <div><b>04</b><strong>Act</strong><span>Teacher insight</span></div>
+                </div>
+            </section>
+            <section class="slide experience">
+                <p class="kicker">THE EXPERIENCE</p>
+                <h2>One workflow.<br><em>Four moments.</em></h2>
+                <div class="timeline">
+                    <article><b>01</b>
+                        <h3>Register</h3>
+                        <p>Mark attendance by class in seconds.</p>
+                    </article>
+                    <article><b>02</b>
+                        <h3>Connect</h3>
+                        <p>Nila starts in Tamil and adapts to the parent.</p>
+                    </article>
+                    <article><b>03</b>
+                        <h3>Capture</h3>
+                        <p>Webhook storage preserves the evidence.</p>
+                    </article>
+                    <article><b>04</b>
+                        <h3>Learn</h3>
+                        <p>AI extracts reasons and recurring signals.</p>
+                    </article>
+                </div>
+                <div class="route-line" aria-hidden="true"></div>
+            </section>
+            <section class="slide intelligence">
+                <div class="side-note">THE INTELLIGENCE LAYER / 05</div>
+                <p class="kicker">THE INTELLIGENCE LAYER</p>
+                <h2>The reason is not always<br>in the first sentence.</h2>
+                <div class="compare">
+                    <div><small>PARENT-ONLY SUMMARY</small>
+                        <blockquote>“Transport issue affected Meera’s attendance today.”</blockquote>
+                    </div>
+                    <div><small>SIGNALS FOR ACTION</small>
+                        <blockquote>transport · recurring · Wednesday</blockquote>
+                    </div>
+                </div>
+                <p class="caption">Original transcript, translated transcript, summary, tags, disposition, and recording
+                    metadata remain connected.</p>
+            </section>
+            <section class="slide value">
+                <p class="kicker">TEACHER VALUE</p>
+                <h2>Useful before, during,<br><em>and after the school day.</em></h2>
+                <div class="value-list">
+                    <div><b>Before class</b><span>See who needs follow-up without rebuilding a list.</span></div>
+                    <div><b>During the day</b><span>Let Nila handle routine conversations consistently.</span></div>
+                    <div><b>After the call</b><span>Read the main reason—not a wall of transcript.</span></div>
+                    <div><b>Over time</b><span>Spot recurring weekday, transport, health, or group patterns.</span>
+                    </div>
+                </div>
+            </section>
+            <section class="slide trust">
+                <p class="kicker">TRUST BY DESIGN</p>
+                <h2>Automation with<br><em>an evidence trail.</em></h2>
+                <ul class="trust-list">
+                    <li>Original SnapServe transcript stays available.</li>
+                    <li>AI analysis uses parent speech—not agent instructions or memory.</li>
+                    <li>Tamil-first conversations switch only when requested.</li>
+                    <li>Webhook, sync, analysis, and errors are logged.</li>
+                </ul>
+                <div class="evidence">source <span>↓</span> reason <span>↓</span> action</div>
+            </section>
+            <section class="slide final">
+                <div class="topline"><span>LIVE PROOF / 08</span><span>SPDLY STUDIOS</span></div>
+                <p class="kicker">LIVE PROOF</p>
+                <h2>A working product,<br><em>not a promise.</em></h2>
+                <div class="proof"><b>attendly</b><span>AI voice agent: Nila</span><span>Team: SpDly
+                        Studios</span><span>Lead: Shivaprasad V</span><a
+                        href="https://nila-v80b.onrender.com/history.html" target="_blank" rel="noreferrer">Open live
+                        call history <span>↗</span></a></div>
+                <footer>Make every absence understandable.</footer>
+            </section>
+        </main>
+        <div class="controls"><button id="prev" aria-label="Previous slide">←</button><span><b id="current">01</b>
+                <i>/</i> <b id="total">08</b></span><button id="next" aria-label="Next slide">→</button></div>
+        <div id="progress" role="progressbar" aria-label="Pitch progress" aria-valuemin="1" aria-valuemax="8"
+            aria-valuenow="1"></div>
+        <script src="pitch.js"></script>
+    </body>
+
+</html>
