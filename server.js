@@ -8,10 +8,10 @@ const port = Number(process.env.PORT || 8787);
 const snapServeBase = 'https://app.snapserve.ai/api';
 const apiKey = process.env.SNAPSERVE_API_KEY;
 const webhookSecret = process.env.SNAPSERVE_WEBHOOK_SECRET;
-const aiEndpoint = process.env.AI_ENDPOINT || 'https://integrate.api.nvidia.com/v1/chat/completions';
+let aiEndpoint = process.env.AI_ENDPOINT || 'https://integrate.api.nvidia.com/v1/chat/completions';
 const aiApiKey = process.env.AI_API_KEY;
-const aiModel = process.env.AI_MODEL || 'meta/muse-glimmer-30b';
-const aiTagModel = process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b';
+let aiModel = process.env.AI_MODEL || 'meta/muse-glimmer-30b';
+let aiTagModel = process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b';
 const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
 // Replace with a database in production; this keeps webhook results available for the running relay.
 const callStore = new Map();
@@ -41,6 +41,7 @@ async function refreshCall(id, existing) {
 }
 function persistAttendance() { atomicWrite(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
 function appendLog(type, data = {}) { fs.appendFileSync(logFile, JSON.stringify({ type, at: new Date().toISOString(), ...data }) + '\n'); }
+function applySessionAI(headers) { aiEndpoint = headers['x-ai-endpoint'] || process.env.AI_ENDPOINT || 'https://integrate.api.nvidia.com/v1/chat/completions'; aiModel = headers['x-ai-model'] || process.env.AI_MODEL || 'meta/muse-glimmer-30b'; aiTagModel = headers['x-ai-tag-model'] || process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b'; }
 async function analyzeTranscript(transcript, existing = {}) {
     if (!aiEndpoint || !aiApiKey || !transcript) return existing.aiAnalysis || null;
     const hash = crypto.createHash('sha256').update(transcript).digest('hex');
@@ -111,6 +112,7 @@ const server = http.createServer(async (request, response) => {
         try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
     }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
+        applySessionAI(request.headers);
         if (requestUrl.searchParams.get('refresh') === '1' && apiKey) {
             try { const upstream = await fetch(`${snapServeBase}/calls`, { headers: { Authorization: `Bearer ${apiKey}` } }); if (upstream.ok) { const body = await upstream.json(); const remote = Array.isArray(body) ? body : body.calls || body.data || []; remote.forEach(call => { const id = call.id || call.callId; if (id) callStore.set(String(id), { ...(callStore.get(String(id)) || {}), ...call, id: String(id) }); }); } } catch { /* retain local records */ }
         }
@@ -167,6 +169,7 @@ const server = http.createServer(async (request, response) => {
         } catch (error) { return sendJson(response, 400, { error: `Invalid webhook payload: ${error.message}` }); }
     }
     if (request.method === 'POST' && requestUrl.pathname.match(/^\/api\/calls\/[^/]+\/analyze$/)) {
+        applySessionAI(request.headers);
         const id = requestUrl.pathname.split('/')[3]; const existing = callStore.get(id);
         if (!existing) return sendJson(response, 404, { error: 'Call not found.' });
         const record = await refreshCall(id, existing); persistCalls(); appendLog('ai.analysis_manual', { id }); return sendJson(response, 200, record);
