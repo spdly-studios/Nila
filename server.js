@@ -15,8 +15,10 @@ const attendanceStore = [];
 const storeFile = path.join(process.env.DATA_DIR || __dirname, 'calls.json');
 try { for (const record of JSON.parse(fs.readFileSync(storeFile, 'utf8'))) callStore.set(record.id, record); } catch { /* first run */ }
 const attendanceFile = path.join(process.env.DATA_DIR || __dirname, 'attendance.json');
+const logFile = path.join(process.env.DATA_DIR || __dirname, 'activity.log');
 try { attendanceStore.push(...JSON.parse(fs.readFileSync(attendanceFile, 'utf8'))); } catch { /* first run */ }
-function persistCalls() { fs.writeFileSync(storeFile, JSON.stringify([...callStore.values()], null, 2)); }
+function atomicWrite(file, value) { const temp = `${file}.tmp`; fs.writeFileSync(temp, value); fs.renameSync(temp, file); }
+function persistCalls() { atomicWrite(storeFile, JSON.stringify([...callStore.values()], null, 2)); }
 async function refreshCall(id, existing) {
     if (!apiKey) return existing;
     try {
@@ -25,7 +27,8 @@ async function refreshCall(id, existing) {
         const latest = await response.json(); const merged = { ...existing, ...latest, updatedAt: new Date().toISOString() }; callStore.set(id, merged); return merged;
     } catch { return existing; }
 }
-function persistAttendance() { fs.writeFileSync(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
+function persistAttendance() { atomicWrite(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
+function appendLog(type, data = {}) { fs.appendFileSync(logFile, JSON.stringify({ type, at: new Date().toISOString(), ...data }) + '\n'); }
 function verifiedWebhook(headers, rawBody) {
     if (!webhookSecret) return true;
     const timestamp = headers['x-snapserve-timestamp'];
@@ -76,6 +79,9 @@ const server = http.createServer(async (request, response) => {
         return response.end();
     }
     const requestUrl = new URL(request.url, `http://${request.headers.host}`);
+    if (request.method === 'GET' && requestUrl.pathname === '/api/logs') {
+        try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
+    }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
         const records = requestUrl.searchParams.get('refresh') === '1' ? await Promise.all([...callStore.values()].map(call => refreshCall(call.id, call))) : [...callStore.values()];
         persistCalls(); return sendJson(response, 200, records.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))));
@@ -83,8 +89,8 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && requestUrl.pathname === '/api/attendance') return sendJson(response, 200, attendanceStore);
     if (request.method === 'POST' && requestUrl.pathname === '/api/attendance') {
         let body = ''; for await (const chunk of request) body += chunk;
-        try { const record = JSON.parse(body || '{}'); if (!record.date || !Array.isArray(record.students)) return sendJson(response, 400, { error: 'date and students are required' }); attendanceStore.push(record); persistAttendance(); return sendJson(response, 201, record); }
-        catch (error) { return sendJson(response, 400, { error: `Invalid attendance record: ${error.message}` }); }
+        try { const record = JSON.parse(body || '{}'); if (!record.date || !Array.isArray(record.students)) return sendJson(response, 400, { error: 'date and students are required' }); record.id ||= crypto.randomUUID(); record.savedAt = new Date().toISOString(); attendanceStore.push(record); persistAttendance(); appendLog('attendance.saved', { id: record.id, date: record.date, className: record.className, studentCount: record.students.length }); return sendJson(response, 201, record); }
+        catch (error) { appendLog('attendance.error', { message: error.message }); return sendJson(response, 400, { error: `Invalid attendance record: ${error.message}` }); }
     }
     if (request.method === 'GET' && !requestUrl.pathname.startsWith('/api/')) {
         const file = requestUrl.pathname === '/' ? 'index.html' : requestUrl.pathname.slice(1);
@@ -108,8 +114,9 @@ const server = http.createServer(async (request, response) => {
             const id = call.id || call.callId;
             if (id) callStore.set(String(id), { id: String(id), status: 'queued', request: payload, createdAt: new Date().toISOString() });
             persistCalls();
+            appendLog('call.queued', { id: id ? String(id) : null, studentName: payload.variables?.studentName || payload.variables?.name, parentName: payload.variables?.parentName || payload.variables?.pname });
             return sendJson(response, 202, { ...call, status: 'queued' });
-        } catch (error) { return sendJson(response, 400, { error: `Invalid outbound call request: ${error.message}` }); }
+        } catch (error) { appendLog('call.error', { message: error.message }); return sendJson(response, 400, { error: `Invalid outbound call request: ${error.message}` }); }
     }
     if (request.method === 'POST' && requestUrl.pathname === '/api/webhooks/snapserve') {
         let body = '';
@@ -124,6 +131,7 @@ const server = http.createServer(async (request, response) => {
             const record = details.ok ? await details.json() : event;
             callStore.set(id, { ...(callStore.get(id) || {}), ...record, webhook: event, updatedAt: new Date().toISOString() });
             persistCalls();
+            appendLog('call.webhook_received', { id, event: event.event, status: data.status, hasTranscript: Boolean(data.transcript), hasSummary: Boolean(data.callSummary) });
             return sendJson(response, 200, { received: true });
         } catch (error) { return sendJson(response, 400, { error: `Invalid webhook payload: ${error.message}` }); }
     }
