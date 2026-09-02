@@ -166,6 +166,11 @@ const server = http.createServer(async (request, response) => {
             return sendJson(response, 200, { received: true });
         } catch (error) { return sendJson(response, 400, { error: `Invalid webhook payload: ${error.message}` }); }
     }
+    if (request.method === 'POST' && requestUrl.pathname.match(/^\/api\/calls\/[^/]+\/analyze$/)) {
+        const id = requestUrl.pathname.split('/')[3]; const existing = callStore.get(id);
+        if (!existing) return sendJson(response, 404, { error: 'Call not found.' });
+        const record = await refreshCall(id, existing); persistCalls(); appendLog('ai.analysis_manual', { id }); return sendJson(response, 200, record);
+    }
     if (request.method === 'GET' && requestUrl.pathname.startsWith('/api/calls/')) {
         const id = requestUrl.pathname.split('/').pop();
         if (callStore.has(id)) return sendJson(response, 200, callStore.get(id));

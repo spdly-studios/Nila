@@ -278,6 +278,8 @@ select {
 .history-toolbar input { flex:1 1 260px; }
 .call-cards { display:grid; gap:12px; }
 .call-card { width:100%; padding:17px 18px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); text-align:left; transition:.15s ease; }
+.call-card { cursor:pointer; }
+.analyze-call { margin-left:8px; padding:5px 8px; font-size:11px; }
 .call-card:hover { border-color:#9fcbbb; box-shadow:0 8px 22px rgba(35,61,67,.08); transform:translateY(-1px); }
 .call-card-top, .call-card-bottom { display:flex; justify-content:space-between; gap:14px; align-items:center; }
 .call-card-parent { margin:7px 0 13px; color:var(--muted); font-size:13px; }
