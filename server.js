@@ -13,6 +13,8 @@ const aiApiKey = process.env.AI_API_KEY;
 let aiModel = process.env.AI_MODEL || 'meta/muse-glimmer-30b';
 let aiTagModel = process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b';
 const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+const startedAt = new Date().toISOString();
+const traffic = { requests: 0, apiRequests: 0, errors: 0, byPath: {}, lastRequestAt: null };
 // Replace with a database in production; this keeps webhook results available for the running relay.
 const callStore = new Map();
 process.on('uncaughtException', error => { console.error('[Attendly] uncaughtException', error); try { appendLog('process.uncaught_exception', { message: error.message, stack: error.stack }); } catch { } });
@@ -131,6 +133,11 @@ async function proxy(response, target, options = {}) {
 }
 
 const server = http.createServer(async (request, response) => {
+    traffic.requests++;
+    traffic.lastRequestAt = new Date().toISOString();
+    const requestPath = String(request.url || '/').split('?')[0];
+    traffic.byPath[requestPath] = (traffic.byPath[requestPath] || 0) + 1;
+    if (requestPath.startsWith('/api/')) traffic.apiRequests++;
     if (request.method === 'GET' && request.url === '/health') {
         return sendJson(response, 200, { service: 'attendly-relay', status: 'ok' });
     }
@@ -147,6 +154,7 @@ const server = http.createServer(async (request, response) => {
         try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
     }
     if (request.method === 'GET' && requestUrl.pathname === '/api/diagnostics') return sendJson(response, 200, { snapserveConfigured: Boolean(apiKey), aiConfigured: Boolean(aiApiKey), webhookConfigured: Boolean(webhookSecret), callsStored: callStore.size, attendanceDays: attendanceStore.length, lastWebhook: [...callStore.values()].map(c => c.updatedAt).sort().pop() || null });
+    if (request.method === 'GET' && requestUrl.pathname === '/api/status') return sendJson(response, 200, { service: 'attendly-relay', status: 'operational', startedAt, uptimeSeconds: Math.round(process.uptime()), now: new Date().toISOString(), traffic: { ...traffic, topPaths: Object.entries(traffic.byPath).sort((a, b) => b[1] - a[1]).slice(0, 10) }, data: { callsStored: callStore.size, attendanceDays: attendanceStore.length }, configuration: { snapserve: Boolean(apiKey), ai: Boolean(aiApiKey), webhook: Boolean(webhookSecret) } });
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls/export.csv') { const rows = [...callStore.values()].map(c => { const i = c.identity || {}, a = c.aiAnalysis || {}; return [c.id, i.studentName, i.parentName, c.direction, c.status, c.createdAt, c.endedAt, a.mainReason, (a.tags || []).join('|'), a.summary, c.callSummary]; }); const csv = [['id', 'student', 'parent', 'direction', 'status', 'createdAt', 'endedAt', 'mainReason', 'tags', 'parentSummary', 'snapserveSummary'], ...rows].map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n'); response.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="attendly-calls.csv"' }); return response.end(csv); }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
         applySessionAI(request.headers);
