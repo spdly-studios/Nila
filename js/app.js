@@ -29,28 +29,28 @@ settingsForm.onsubmit = event => { event.preventDefault(); const relayUrl = rela
 function showToast(message) { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); }
 const attendanceSubmit = startBtn.onclick;
 document.addEventListener('click', async event => {
-	if (!event.target.closest('#startBtn')) return;
-	event.preventDefault();
-	event.stopImmediatePropagation();
-	const absent = students.filter(student => !student.present);
-	if (!absent.length) return showToast('Mark at least one student absent first.');
-	const record = { date: new Date().toLocaleDateString('en-CA'), className: classSelect.value, students: students.map(({ name, roll, present }) => ({ name, roll, present })) };
-	startBtn.disabled = true;
-	try {
-		const response = await fetch(`${getRelayUrl()}/api/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
-		if (!response.ok) throw Error(`Attendance save failed (${response.status})`);
-		saveState.textContent = '● Attendance saved';
-		await attendanceSubmit();
-		document.querySelectorAll('.queue-item.done').forEach(item => { item.classList.remove('done', 'calling'); item.querySelector('em').textContent = 'Queued'; item.querySelector('.reason').textContent = 'Call accepted and awaiting completion.'; });
-		document.querySelectorAll('.queue-item').forEach(item => { const name = item.querySelector('strong')?.textContent; if (name) { const key = `attendly-call-${name}`; const saved = JSON.parse(localStorage.getItem(key) || '{}'); localStorage.setItem(key, JSON.stringify({ ...saved, status: 'queued', reason: 'Call accepted and awaiting completion.' })); } });
-		startBtn.textContent = 'Submit & start calls →';
-		queueBadge.textContent = `${absent.length} queued`;
-		showToast('Attendance saved. Calls are queued.');
-	} catch (error) {
-		saveState.textContent = '● Save failed';
-		startBtn.disabled = false;
-		showToast(error.message);
-	}
+    if (!event.target.closest('#startBtn')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const absent = students.filter(student => !student.present);
+    if (!absent.length) return showToast('Mark at least one student absent first.');
+    const record = { date: new Date().toLocaleDateString('en-CA'), className: classSelect.value, students: students.map(({ name, roll, present }) => ({ name, roll, present })) };
+    startBtn.disabled = true;
+    try {
+        const response = await fetch(`${getRelayUrl()}/api/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
+        if (!response.ok) throw Error(`Attendance save failed (${response.status})`);
+        saveState.textContent = '● Attendance saved';
+        await attendanceSubmit();
+        document.querySelectorAll('.queue-item.done').forEach(item => { item.classList.remove('done', 'calling'); item.querySelector('em').textContent = 'Queued'; item.querySelector('.reason').textContent = 'Call accepted and awaiting completion.'; });
+        document.querySelectorAll('.queue-item').forEach(item => { const name = item.querySelector('strong')?.textContent; if (name) { const key = `attendly-call-${name}`; const saved = JSON.parse(localStorage.getItem(key) || '{}'); localStorage.setItem(key, JSON.stringify({ ...saved, status: 'queued', reason: 'Call accepted and awaiting completion.' })); } });
+        startBtn.textContent = 'Submit & start calls →';
+        queueBadge.textContent = `${absent.length} queued`;
+        showToast('Attendance saved. Calls are queued.');
+    } catch (error) {
+        saveState.textContent = '● Save failed';
+        startBtn.disabled = false;
+        showToast(error.message);
+    }
 }, true);
 const attendanceObserver = new MutationObserver(() => document.querySelectorAll('.status').forEach(button => button.setAttribute('aria-pressed', String(button.classList.contains('present')))));
 attendanceObserver.observe(rows, { childList: true });
