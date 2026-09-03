@@ -1060,34 +1060,32 @@ h2 {
     transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
-font-size: 0;
-}
-
 .brand-mark::after {
     content: '@';
     display: block;
     font: 700 19px/1 'DM Mono', 'Courier New', monospace;
     transform: translateY(-1px);
+}
 
-    .primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 18px rgba(31, 53, 64, .12);
-    }
+.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(31, 53, 64, .12);
+}
 
-    .primary {
-        background: var(--green);
-    }
+.primary {
+    background: var(--green);
+}
 
-    .summary {
-        margin: 30px 0 24px;
-        padding: 19px 0;
-    }
+.summary {
+    margin: 30px 0 24px;
+    padding: 19px 0;
+}
 
-    .summary strong {
-        font-size: 28px;
-    }
+.summary strong {
+    font-size: 28px;
+}
 
-    th {
+th {
         padding-bottom: 12px;
         color: #819095;
         font-size: 9px;
@@ -1195,7 +1193,7 @@ font-size: 0;
         }
 
         nav {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 4px;
         }
 
