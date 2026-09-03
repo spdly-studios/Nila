@@ -1,4 +1,4 @@
-window.addEventListener('error', event => console.error('[Attendly]', event.error || event.message)); window.addEventListener('unhandledrejection', event => console.error('[Attendly]', event.reason));
+document.write('<script src="js/navigation.js"><\\/script>'); window.addEventListener('error', event => console.error('[Attendly]', event.error || event.message)); window.addEventListener('unhandledrejection', event => console.error('[Attendly]', event.reason));
 document.querySelector('.sidebar-foot strong').textContent = 'Shivaprasad V';
 const SNAP_SERVE = { agentId: 920, agentName: 'Nila', demoMode: false };
 const RELAY_URL_STORAGE = 'attendly-snapserve-relay-url';

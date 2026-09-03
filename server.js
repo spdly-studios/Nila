@@ -175,7 +175,7 @@ const server = http.createServer(async (request, response) => {
         const safe = path.normalize(file);
         if (!safe.startsWith('..') && !path.isAbsolute(safe)) {
             const filePath = path.join(__dirname, safe);
-            try { const content = fs.readFileSync(filePath); const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : 'application/javascript'; response.writeHead(200, { 'Content-Type': type }); return response.end(content); } catch { /* continue to API 404 */ }
+            try { const isHtml = file.endsWith('.html'); const rawContent = fs.readFileSync(filePath); const content = isHtml ? Buffer.from(rawContent.toString().replace('</body>', '<script src="/js/navigation.js"></script></body>')) : rawContent; const type = isHtml ? 'text/html' : file.endsWith('.css') ? 'text/css' : 'application/javascript'; response.writeHead(200, { 'Content-Type': type }); return response.end(content); } catch { /* continue to API 404 */ }
         }
     }
     if (request.method === 'POST' && requestUrl.pathname === '/api/calls/outbound') {
