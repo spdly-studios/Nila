@@ -36,14 +36,43 @@ async function refreshCall(id, existing) {
         const [logs, disposition, memory, recording, agent] = await Promise.all([get('/logs'), get('/disposition'), get('/caller-memory'), get('/meeting-recording'), latest.agentId ? getAgent(latest.agentId) : null]);
         const variables = callVariables({ ...existing, ...latest });
         const merged = { ...existing, ...latest, identity: { studentName: variables.studentName || variables.name || existing.identity?.studentName || null, parentName: variables.parentName || variables.pname || existing.identity?.parentName || null, phone: variables.phone || existing.identity?.phone || latest.toNumber || latest.fromNumber || null }, related: { logs, disposition, callerMemory: memory, meetingRecording: recording, agent }, updatedAt: new Date().toISOString() };
+        merged.timeline = buildTimeline(merged, logs, disposition, recording);
+        merged.quality = buildQuality(merged);
         merged.translatedTranscript = await translateTranscript(latest.transcript);
         merged.aiAnalysis = await analyzeTranscriptV2(merged.translatedTranscript, existing);
         merged.aiAnalysis = ensureAnalysis(merged, merged.aiAnalysis);
+        merged.timeline = buildTimeline(merged, logs, disposition, recording);
         callStore.set(id, merged); return merged;
     } catch { return existing; }
 }
 function persistAttendance() { atomicWrite(attendanceFile, JSON.stringify(attendanceStore, null, 2)); }
 function appendLog(type, data = {}) { fs.appendFileSync(logFile, JSON.stringify({ type, at: new Date().toISOString(), ...data }) + '\n'); }
+function firstDate(...values) { for (const value of values) { const date = value && new Date(value); if (date && !Number.isNaN(date.getTime())) return date.toISOString(); } return null; }
+function durationSeconds(record) { const value = Number(record.durationSeconds ?? record.duration ?? record.callDuration ?? record.durationInSeconds); if (Number.isFinite(value) && value >= 0) return Math.round(value); const start = firstDate(record.startedAt, record.startTime, record.createdAt), end = firstDate(record.endedAt, record.endTime, record.completedAt); return start && end ? Math.max(0, Math.round((new Date(end) - new Date(start)) / 1000)) : null; }
+function buildTimeline(record, rawLogs, disposition, recording) {
+    const events = [];
+    const add = (label, at, detail, type = 'info') => { const timestamp = firstDate(at); if (timestamp) events.push({ label, at: timestamp, detail: detail ? String(detail) : '', type }); };
+    add('Call queued', record.createdAt || record.queuedAt, 'Outbound request accepted', 'queued');
+    const logs = Array.isArray(rawLogs) ? rawLogs : rawLogs?.logs || rawLogs?.events || rawLogs?.data || [];
+    logs.forEach(log => add(log.event || log.type || log.name || 'Call event', log.at || log.timestamp || log.createdAt || log.time, log.message || log.detail || log.status, 'event'));
+    add('Call started', record.startedAt || record.startTime || record.initiatedAt, 'Conversation started', 'started');
+    add('Call answered', record.answeredAt || record.connectedAt, 'Parent or guardian answered', 'answered');
+    if (record.language || record.detectedLanguage) add('Language selected', record.languageAt || record.updatedAt, record.language || record.detectedLanguage, 'language');
+    if (record.transcript || record.translatedTranscript) add('Transcript received', record.transcriptAt || record.endedAt || record.updatedAt, 'Conversation transcript available', 'transcript');
+    if (disposition) add('Disposition recorded', disposition.at || disposition.createdAt || record.endedAt || record.updatedAt, disposition.result || disposition.outcome || disposition.status || 'Outcome recorded', 'disposition');
+    add('Call ended', record.endedAt || record.completedAt || record.endTime, record.status || 'Completed', 'ended');
+    const recordingReady = recording?.url || recording?.recordingUrl || recording?.status === 'ready' || record.recordingUrl;
+    if (recordingReady) add('Recording available', recording?.createdAt || recording?.readyAt || record.endedAt || record.updatedAt, recording?.duration || 'Recording ready', 'recording');
+    if (record.aiAnalysis?.analyzedAt) add('AI analysis completed', record.aiAnalysis.analyzedAt, record.aiAnalysis.mainReason || 'Analysis ready', 'analysis');
+    const unique = new Map(); events.sort((a, b) => a.at.localeCompare(b.at)).forEach(event => unique.set(`${event.label}|${event.at}`, event)); return [...unique.values()];
+}
+function buildQuality(record) {
+    const status = String(record.status || '').toLowerCase(), duration = durationSeconds(record), transcript = Boolean(record.transcript || record.translatedTranscript), answered = Boolean(record.answeredAt || record.connectedAt || transcript || /completed|answered/.test(status));
+    const outcome = record.related?.disposition?.result || record.related?.disposition?.outcome || record.dispositionResult?.outcome || record.dispositionResult?.status || '';
+    const failed = /failed|error|busy|no_answer|no answer|voicemail/.test(status) || /failed|busy|no_answer|voicemail/.test(String(outcome).toLowerCase());
+    const score = Math.round((answered ? 40 : 0) + (transcript ? 25 : 0) + (duration > 15 ? 15 : duration > 0 ? 8 : 0) + (outcome ? 15 : 0) + (record.recordingUrl || record.related?.meetingRecording?.url ? 5 : 0) - (failed ? 25 : 0));
+    return { score: Math.max(0, Math.min(100, score)), label: score >= 75 ? 'Good' : score >= 45 ? 'Needs review' : 'Poor', answered, transcript, durationSeconds: duration, outcome: outcome || null, failed, analyzedAt: new Date().toISOString() };
+}
 function applySessionAI(headers) { aiEndpoint = headers['x-ai-endpoint'] || process.env.AI_ENDPOINT || 'https://integrate.api.nvidia.com/v1/chat/completions'; aiModel = headers['x-ai-model'] || process.env.AI_MODEL || 'meta/muse-glimmer-30b'; aiTagModel = headers['x-ai-tag-model'] || process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b'; }
 async function analyzeTranscript(transcript, existing = {}) {
     if (!aiEndpoint || !aiApiKey || !transcript) return existing.aiAnalysis || null;
@@ -153,7 +182,7 @@ const server = http.createServer(async (request, response) => {
             if (!upstream.ok) return sendJson(response, upstream.status, { error: text });
             const call = JSON.parse(text);
             const id = call.id || call.callId;
-            if (id) callStore.set(String(id), { id: String(id), status: 'queued', request: payload, createdAt: new Date().toISOString() });
+            if (id) { const queued = { id: String(id), status: 'queued', request: payload, createdAt: new Date().toISOString() }; queued.timeline = buildTimeline(queued, [], null, null); queued.quality = buildQuality(queued); callStore.set(String(id), queued); }
             persistCalls();
             appendLog('call.queued', { id: id ? String(id) : null, studentName: payload.variables?.studentName || payload.variables?.name, parentName: payload.variables?.parentName || payload.variables?.pname });
             return sendJson(response, 202, { ...call, status: 'queued' });
@@ -170,7 +199,7 @@ const server = http.createServer(async (request, response) => {
             if (!id) return sendJson(response, 400, { error: 'Webhook payload has no call id.' });
             const details = await fetch(`${snapServeBase}/calls/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${apiKey}` } });
             const record = details.ok ? await details.json() : event;
-            callStore.set(id, { ...(callStore.get(id) || {}), ...record, webhook: event, updatedAt: new Date().toISOString() });
+            const merged = { ...(callStore.get(id) || {}), ...record, webhook: event, updatedAt: new Date().toISOString() }; merged.timeline = buildTimeline(merged, event.logs || event.events || event.data?.logs, event.disposition || event.data?.disposition, event.recording || event.data?.recording); merged.quality = buildQuality(merged); callStore.set(id, merged);
             persistCalls();
             appendLog('call.webhook_received', { id, event: event.event, status: data.status, hasTranscript: Boolean(data.transcript), hasSummary: Boolean(data.callSummary) });
             return sendJson(response, 200, { received: true });
