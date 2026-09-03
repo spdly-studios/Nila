@@ -14,6 +14,7 @@ Attendly is a browser-based attendance dashboard backed by a Node.js relay. The 
 │   ├── analytics.js     # Attendance insights and risk indicators
 │   ├── history.js       # Call history, filters, details, and analysis
 │   ├── settings.js      # Browser-session AI settings
+│   ├── navigation.js    # Shared application navigation
 │   └── pitch.js         # Pitch deck navigation and presentation behavior
 ├── docs/
 │   └── project-structure.md
@@ -21,6 +22,8 @@ Attendly is a browser-based attendance dashboard backed by a Node.js relay. The 
 ├── history.html         # Parent call history
 ├── analytics.html       # Attendance insights
 ├── settings.html        # AI configuration
+├── docs.html            # Product and operations documentation
+├── status.html          # Live relay status dashboard
 ├── pitch.html           # Attendly / Nila pitch deck
 └── server.js            # Static file server and SnapServe relay
 ```

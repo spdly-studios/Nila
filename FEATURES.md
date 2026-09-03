@@ -10,8 +10,10 @@ Attendly is a Render-hosted attendance and parent follow-up app. The live servic
 - `/history.html` — searchable call history with refresh, filters, tags, summaries, and transcript details
 - `/analytics.html` — absence patterns, weekday clusters, and risk ranking
 - `/settings.html` — browser-session AI configuration
+- `/docs.html` — product and operations documentation
+- `/status.html` — live relay status dashboard
 
-All pages use the same navigation order: Attendance, Call history, Insights, Settings.
+All pages use the same navigation order: Attendance, Call history, Insights, Docs, Status, Settings.
 
 ## Attendance
 

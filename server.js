@@ -13,6 +13,11 @@ const aiApiKey = process.env.AI_API_KEY;
 let aiModel = process.env.AI_MODEL || 'meta/muse-glimmer-30b';
 let aiTagModel = process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b';
 const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+const corsOrigin = process.env.ALLOWED_ORIGIN || publicUrl || '';
+const maxBodyBytes = 256 * 1024;
+const allowedStaticFiles = new Set(['index.html', 'analytics.html', 'docs.html', 'history.html', 'settings.html', 'status.html', 'pitch.html', 'css/styles.css', 'css/pitch.css', 'js/app.js', 'js/analytics.js', 'js/history.js', 'js/navigation.js', 'js/pitch.js', 'js/settings.js', 'js/status.js']);
+const allowedAiEndpoint = new URL(aiEndpoint).origin + new URL(aiEndpoint).pathname;
+const seenWebhookSignatures = new Map();
 const startedAt = new Date().toISOString();
 const traffic = { requests: 0, apiRequests: 0, errors: 0, byPath: {}, lastRequestAt: null };
 // Replace with a database in production; this keeps webhook results available for the running relay.
@@ -25,7 +30,7 @@ try { for (const record of JSON.parse(fs.readFileSync(storeFile, 'utf8'))) callS
 const attendanceFile = path.join(process.env.DATA_DIR || __dirname, 'attendance.json');
 const logFile = path.join(process.env.DATA_DIR || __dirname, 'activity.log');
 try { attendanceStore.push(...JSON.parse(fs.readFileSync(attendanceFile, 'utf8'))); } catch { /* first run */ }
-function atomicWrite(file, value) { const temp = `${file}.tmp`; fs.writeFileSync(temp, value); fs.renameSync(temp, file); }
+function atomicWrite(file, value) { const temp = `${file}.${process.pid}.tmp`; fs.writeFileSync(temp, value); fs.renameSync(temp, file); }
 function persistCalls() { atomicWrite(storeFile, JSON.stringify([...callStore.values()], null, 2)); }
 async function refreshCall(id, existing) {
     if (!apiKey) return existing;
@@ -75,7 +80,7 @@ function buildQuality(record) {
     const score = Math.round((answered ? 40 : 0) + (transcript ? 25 : 0) + (duration > 15 ? 15 : duration > 0 ? 8 : 0) + (outcome ? 15 : 0) + (record.recordingUrl || record.related?.meetingRecording?.url ? 5 : 0) - (failed ? 25 : 0));
     return { score: Math.max(0, Math.min(100, score)), label: score >= 75 ? 'Good' : score >= 45 ? 'Needs review' : 'Poor', answered, transcript, durationSeconds: duration, outcome: outcome || null, failed, analyzedAt: new Date().toISOString() };
 }
-function applySessionAI(headers) { aiEndpoint = headers['x-ai-endpoint'] || process.env.AI_ENDPOINT || 'https://integrate.api.nvidia.com/v1/chat/completions'; aiModel = headers['x-ai-model'] || process.env.AI_MODEL || 'meta/muse-glimmer-30b'; aiTagModel = headers['x-ai-tag-model'] || process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b'; }
+function applySessionAI(headers) { aiEndpoint = allowedAiEndpoint; aiModel = headers['x-ai-model'] || process.env.AI_MODEL || 'meta/muse-glimmer-30b'; aiTagModel = headers['x-ai-tag-model'] || process.env.AI_TAG_MODEL || 'nemotron-3-embed-1b'; }
 async function analyzeTranscript(transcript, existing = {}) {
     if (!aiEndpoint || !aiApiKey || !transcript) return existing.aiAnalysis || null;
     const hash = crypto.createHash('sha256').update(transcript).digest('hex');
@@ -95,20 +100,39 @@ async function translateTranscript(transcript) { if (!aiApiKey || !transcript ||
 function fallbackAnalysis(record) { const reason = record.dispositionResult?.reason_for_absence || record.dispositionResult?.reason || ''; const text = `${reason} ${record.dispositionResult?.summary || ''} ${record.callSummary || ''}`.toLowerCase(); const tags = []; if (/sick|ill|health|fever|hospital|doctor|medical/.test(text)) tags.push('health_issue'); if (/travel|outstation|trip|village/.test(text)) tags.push('travel'); if (/family|personal|function|wedding/.test(text)) tags.push('family_or_personal'); if (/transport|bus|traffic|vehicle|transportation/.test(text)) tags.push('transport'); if (/no reason|without a reason|reason.*not/.test(text) || !text.trim()) tags.push('no_reason_provided'); return { mainReason: reason || record.dispositionResult?.summary || 'Reason not available', tags, confidence: 0, source: 'fallback' }; }
 function ensureAnalysis(record, analysis) { const speech = parentSpeech(record.translatedTranscript || record.transcript), fallback = fallbackAnalysis(record); return { ...(analysis || fallback), summary: analysis?.summary || (speech ? speech.slice(0, 500) : (fallback.mainReason || 'Parent summary not available.')), mainReason: analysis?.mainReason && analysis.mainReason !== 'No reason provided' ? analysis.mainReason : fallback.mainReason, tags: Array.isArray(analysis?.tags) && analysis.tags.length ? analysis.tags : fallback.tags }; }
 function verifiedWebhook(headers, rawBody) {
-    if (!webhookSecret) return true;
+    if (!webhookSecret) return false;
     const timestamp = headers['x-snapserve-timestamp'];
     const supplied = headers['x-snapserve-signature'] || '';
     if (!timestamp || !supplied) return false;
+    const timestampMs = Number(timestamp) * 1000;
+    if (!Number.isFinite(timestampMs) || Math.abs(Date.now() - timestampMs) > 5 * 60 * 1000) return false;
     const expected = `sha256=${crypto.createHmac('sha256', webhookSecret).update(`${timestamp}.${rawBody}`).digest('hex')}`;
-    return supplied.length === expected.length && crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+    const valid = supplied.length === expected.length && crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+    if (!valid || seenWebhookSignatures.has(supplied)) return false;
+    seenWebhookSignatures.set(supplied, Date.now());
+    for (const [signature, seenAt] of seenWebhookSignatures) if (Date.now() - seenAt > 10 * 60 * 1000) seenWebhookSignatures.delete(signature);
+    return true;
+}
+
+async function readBody(request) {
+    if (Number(request.headers['content-length'] || 0) > maxBodyBytes) throw Object.assign(new Error('Request body is too large.'), { statusCode: 413 });
+    let body = '';
+    for await (const chunk of request) {
+        body += chunk;
+        if (Buffer.byteLength(body) > maxBodyBytes) throw Object.assign(new Error('Request body is too large.'), { statusCode: 413 });
+    }
+    return body;
 }
 
 function sendJson(response, status, body) {
     response.writeHead(status, {
-        'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
+        ...(corsOrigin ? { 'Access-Control-Allow-Origin': corsOrigin } : {}),
         'Access-Control-Allow-Headers': 'Content-Type, X-AI-Endpoint, X-AI-Model, X-AI-Tag-Model',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Content-Security-Policy': "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://app.snapserve.ai https://integrate.api.nvidia.com"
     });
     response.end(JSON.stringify(body));
 }
@@ -122,7 +146,7 @@ async function proxy(response, target, options = {}) {
         });
         const text = await upstream.text();
         response.writeHead(upstream.status, {
-            'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
+            ...(corsOrigin ? { 'Access-Control-Allow-Origin': corsOrigin } : {}),
             'Access-Control-Allow-Headers': 'Content-Type',
             'Content-Type': upstream.headers.get('content-type') || 'application/json'
         });
@@ -143,7 +167,7 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === 'OPTIONS') {
         response.writeHead(204, {
-            'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
+            ...(corsOrigin ? { 'Access-Control-Allow-Origin': corsOrigin } : {}),
             'Access-Control-Allow-Headers': 'Content-Type, X-AI-Endpoint, X-AI-Model, X-AI-Tag-Model',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
         });
@@ -154,7 +178,7 @@ const server = http.createServer(async (request, response) => {
         try { const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').filter(Boolean).slice(-500).map(line => JSON.parse(line)); return sendJson(response, 200, lines); } catch { return sendJson(response, 200, []); }
     }
     if (request.method === 'GET' && requestUrl.pathname === '/api/diagnostics') return sendJson(response, 200, { snapserveConfigured: Boolean(apiKey), aiConfigured: Boolean(aiApiKey), webhookConfigured: Boolean(webhookSecret), callsStored: callStore.size, attendanceDays: attendanceStore.length, lastWebhook: [...callStore.values()].map(c => c.updatedAt).sort().pop() || null });
-    if (request.method === 'GET' && requestUrl.pathname === '/api/status') return sendJson(response, 200, { service: 'attendly-relay', status: 'operational', startedAt, uptimeSeconds: Math.round(process.uptime()), now: new Date().toISOString(), traffic: { ...traffic, topPaths: Object.entries(traffic.byPath).sort((a, b) => b[1] - a[1]).slice(0, 10) }, data: { callsStored: callStore.size, attendanceDays: attendanceStore.length }, configuration: { snapserve: Boolean(apiKey), ai: Boolean(aiApiKey), webhook: Boolean(webhookSecret) } });
+    if (request.method === 'GET' && requestUrl.pathname === '/api/status') return sendJson(response, 200, { service: 'attendly-relay', status: apiKey && webhookSecret ? 'operational' : 'degraded', startedAt, uptimeSeconds: Math.round(process.uptime()), now: new Date().toISOString(), traffic: { ...traffic, topPaths: Object.entries(traffic.byPath).sort((a, b) => b[1] - a[1]).slice(0, 10) }, data: { callsStored: callStore.size, attendanceDays: attendanceStore.length }, configuration: { snapserve: Boolean(apiKey), ai: Boolean(aiApiKey), webhook: Boolean(webhookSecret) } });
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls/export.csv') { const rows = [...callStore.values()].map(c => { const i = c.identity || {}, a = c.aiAnalysis || {}; return [c.id, i.studentName, i.parentName, c.direction, c.status, c.createdAt, c.endedAt, a.mainReason, (a.tags || []).join('|'), a.summary, c.callSummary]; }); const csv = [['id', 'student', 'parent', 'direction', 'status', 'createdAt', 'endedAt', 'mainReason', 'tags', 'parentSummary', 'snapserveSummary'], ...rows].map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n'); response.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="attendly-calls.csv"' }); return response.end(csv); }
     if (request.method === 'GET' && requestUrl.pathname === '/api/calls') {
         applySessionAI(request.headers);
@@ -166,21 +190,23 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === 'GET' && requestUrl.pathname === '/api/attendance') return sendJson(response, 200, attendanceStore);
     if (request.method === 'POST' && requestUrl.pathname === '/api/attendance') {
-        let body = ''; for await (const chunk of request) body += chunk;
+        let body;
+        try { body = await readBody(request); } catch (error) { return sendJson(response, error.statusCode || 400, { error: error.message }); }
         try { const record = JSON.parse(body || '{}'); if (!/^\d{4}-\d{2}-\d{2}$/.test(record.date) || !/^[0-9]+-[A-Z]$/.test(record.className || '') || !Array.isArray(record.students) || !record.students.length || record.students.some(student => typeof student?.name !== 'string' || typeof student?.roll !== 'string' || typeof student?.present !== 'boolean')) return sendJson(response, 400, { error: 'date, className, and valid students are required' }); if (attendanceStore.some(saved => saved.date === record.date && saved.className === record.className)) return sendJson(response, 409, { error: 'Attendance is already saved for this class and date.' }); record.id ||= crypto.randomUUID(); record.savedAt = new Date().toISOString(); attendanceStore.push(record); persistAttendance(); appendLog('attendance.saved', { id: record.id, date: record.date, className: record.className, studentCount: record.students.length }); return sendJson(response, 201, record); }
         catch (error) { appendLog('attendance.error', { message: error.message }); return sendJson(response, 400, { error: `Invalid attendance record: ${error.message}` }); }
     }
     if (request.method === 'GET' && !requestUrl.pathname.startsWith('/api/')) {
         const file = requestUrl.pathname === '/' ? 'index.html' : requestUrl.pathname.slice(1);
         const safe = path.normalize(file);
+        const staticKey = safe.replaceAll('\\', '/');
         if (!safe.startsWith('..') && !path.isAbsolute(safe)) {
             const filePath = path.join(__dirname, safe);
-            try { const isHtml = file.endsWith('.html'); const rawContent = fs.readFileSync(filePath); const content = isHtml ? Buffer.from(rawContent.toString().replace('</body>', '<script src="/js/navigation.js"></script></body>')) : rawContent; const type = isHtml ? 'text/html' : file.endsWith('.css') ? 'text/css' : 'application/javascript'; response.writeHead(200, { 'Content-Type': type }); return response.end(content); } catch { /* continue to API 404 */ }
+            try { if (!allowedStaticFiles.has(staticKey)) return sendJson(response, 404, { error: 'Not found' }); const isHtml = file.endsWith('.html'); const rawContent = fs.readFileSync(filePath); const content = isHtml ? Buffer.from(rawContent.toString().replace('</body>', '<script src="/js/navigation.js"></script></body>')) : rawContent; const type = isHtml ? 'text/html' : file.endsWith('.css') ? 'text/css' : 'application/javascript'; response.writeHead(200, { 'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://app.snapserve.ai https://integrate.api.nvidia.com" }); return response.end(content); } catch { /* continue to API 404 */ }
         }
     }
     if (request.method === 'POST' && requestUrl.pathname === '/api/calls/outbound') {
-        let body = '';
-        for await (const chunk of request) body += chunk;
+        let body;
+        try { body = await readBody(request); } catch (error) { return sendJson(response, error.statusCode || 400, { error: error.message }); }
         if (!apiKey) return sendJson(response, 500, { error: 'SNAPSERVE_API_KEY is not configured on the relay.' });
         try {
             const payload = JSON.parse(body || '{}');
@@ -197,8 +223,8 @@ const server = http.createServer(async (request, response) => {
         } catch (error) { appendLog('call.error', { message: error.message }); return sendJson(response, 400, { error: `Invalid outbound call request: ${error.message}` }); }
     }
     if (request.method === 'POST' && requestUrl.pathname === '/api/webhooks/snapserve') {
-        let body = '';
-        for await (const chunk of request) body += chunk;
+        let body;
+        try { body = await readBody(request); } catch (error) { return sendJson(response, error.statusCode || 400, { error: error.message }); }
         if (!verifiedWebhook(request.headers, body)) return sendJson(response, 401, { error: 'Invalid SnapServe webhook signature.' });
         try {
             const event = JSON.parse(body || '{}');

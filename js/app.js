@@ -1,8 +1,8 @@
-document.write('<script src="js/navigation.js"><\\/script>'); window.addEventListener('error', event => console.error('[Attendly]', event.error || event.message)); window.addEventListener('unhandledrejection', event => console.error('[Attendly]', event.reason));
+window.addEventListener('error', event => console.error('[Attendly]', event.error || event.message)); window.addEventListener('unhandledrejection', event => console.error('[Attendly]', event.reason));
 document.querySelector('.sidebar-foot strong').textContent = 'Shivaprasad V';
 const SNAP_SERVE = { agentId: 920, agentName: 'Nila', demoMode: false };
 const RELAY_URL_STORAGE = 'attendly-snapserve-relay-url';
-const students = [{ name: 'Aarav Mehta', roll: '08', pname: 'Rakesh Mehta', phone: '8637488905', present: true }, { name: 'Diya Kapoor', roll: '11', pname: 'Neha Kapoor', phone: '8637488905', present: true }, { name: 'Kabir Shah', roll: '14', pname: 'Priya Shah', phone: '8637488905', present: false }, { name: 'Meera Iyer', roll: '18', pname: 'Suresh Iyer', phone: '8637488905', present: true }, { name: 'Rohan Verma', roll: '21', pname: 'Anita Verma', phone: '8637488905', present: false }, { name: 'Sana Khan', roll: '24', pname: 'Nadia Khan', phone: '8637488905', present: false }];
+const students = [{ name: 'Aarav Mehta', roll: '08', pname: 'Rakesh Mehta', phone: '8637488905', present: true }, { name: 'Diya Kapoor', roll: '11', pname: 'Neha Kapoor', phone: '8637488905', present: true }, { name: 'Kabir Shah', roll: '14', pname: 'Priya Shah', phone: '8637488905', present: true }, { name: 'Meera Iyer', roll: '18', pname: 'Suresh Iyer', phone: '8637488905', present: true }, { name: 'Rohan Verma', roll: '21', pname: 'Anita Verma', phone: '8637488905', present: true }, { name: 'Sana Khan', roll: '24', pname: 'Nadia Khan', phone: '8637488905', present: true }];
 const rows = document.querySelector('#studentRows');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
@@ -10,7 +10,7 @@ const getRelayUrl = () => localStorage.getItem(RELAY_URL_STORAGE)?.trim().replac
 function updateCounts() { const present = students.filter(student => student.present).length, absent = students.length - present; presentCount.textContent = present; absentCount.textContent = absent; totalCount.textContent = students.length; selectedCount.textContent = absent; queueBadge.textContent = `${absent} queued`; attendanceRate.textContent = `${students.length ? Math.round(present / students.length * 100) : 0}% attendance`; progressBar.style.width = `${students.length ? present / students.length * 100 : 0}%`; }
 function render() { rows.innerHTML = students.map((student, index) => `<tr><td>${escapeHtml(student.name)}</td><td>${escapeHtml(student.roll)}</td><td><button class="status ${student.present ? 'present' : 'absent'}" data-index="${index}">${student.present ? 'Present' : 'Absent'}</button></td></tr>`).join(''); updateCounts(); }
 render();
-const CLASS_ROSTERS = { '8-A': [{ name: 'Aarav Mehta', roll: '08', pname: 'Rakesh Mehta', phone: '8637488905', present: true }, { name: 'Diya Kapoor', roll: '11', pname: 'Neha Kapoor', phone: '8637488906', present: true }, { name: 'Kabir Shah', roll: '14', pname: 'Priya Shah', phone: '8637488907', present: false }, { name: 'Meera Iyer', roll: '18', pname: 'Suresh Iyer', phone: '8637488908', present: true }, { name: 'Rohan Verma', roll: '21', pname: 'Anita Verma', phone: '8637488909', present: false }, { name: 'Sana Khan', roll: '24', pname: 'Nadia Khan', phone: '8637488910', present: false }], '7-B': [{ name: 'Aditya Rao', roll: '03', pname: 'Kavita Rao', phone: '8637488911', present: true }, { name: 'Ishita Das', roll: '07', pname: 'Mohan Das', phone: '8637488912', present: true }, { name: 'Nikhil Jain', roll: '12', pname: 'Pooja Jain', phone: '8637488913', present: false }], '10-C': [{ name: 'Ananya Bose', roll: '02', pname: 'Rina Bose', phone: '8637488914', present: true }, { name: 'Vikram Nair', roll: '09', pname: 'Deepa Nair', phone: '8637488915', present: false }, { name: 'Zoya Ali', roll: '16', pname: 'Sameer Ali', phone: '8637488916', present: true }], '6-A': [{ name: 'Arjun Menon', roll: '01', pname: 'Latha Menon', phone: '8637488917', present: true }, { name: 'Mira Roy', roll: '05', pname: 'Sanjay Roy', phone: '8637488918', present: false }, { name: 'Dev Patel', roll: '10', pname: 'Nisha Patel', phone: '8637488919', present: true }] };
+const CLASS_ROSTERS = { '8-A': [{ name: 'Aarav Mehta', roll: '08', pname: 'Rakesh Mehta', phone: '8637488905', present: true }, { name: 'Diya Kapoor', roll: '11', pname: 'Neha Kapoor', phone: '8637488906', present: true }, { name: 'Kabir Shah', roll: '14', pname: 'Priya Shah', phone: '8637488907', present: true }, { name: 'Meera Iyer', roll: '18', pname: 'Suresh Iyer', phone: '8637488908', present: true }, { name: 'Rohan Verma', roll: '21', pname: 'Anita Verma', phone: '8637488909', present: true }, { name: 'Sana Khan', roll: '24', pname: 'Nadia Khan', phone: '8637488910', present: true }], '7-B': [{ name: 'Aditya Rao', roll: '03', pname: 'Kavita Rao', phone: '8637488911', present: true }, { name: 'Ishita Das', roll: '07', pname: 'Mohan Das', phone: '8637488912', present: true }, { name: 'Nikhil Jain', roll: '12', pname: 'Pooja Jain', phone: '8637488913', present: true }], '10-C': [{ name: 'Ananya Bose', roll: '02', pname: 'Rina Bose', phone: '8637488914', present: true }, { name: 'Vikram Nair', roll: '09', pname: 'Deepa Nair', phone: '8637488915', present: true }, { name: 'Zoya Ali', roll: '16', pname: 'Sameer Ali', phone: '8637488916', present: true }], '6-A': [{ name: 'Arjun Menon', roll: '01', pname: 'Latha Menon', phone: '8637488917', present: true }, { name: 'Mira Roy', roll: '05', pname: 'Sanjay Roy', phone: '8637488918', present: true }, { name: 'Dev Patel', roll: '10', pname: 'Nisha Patel', phone: '8637488919', present: true }] };
 classSelect.addEventListener('change', () => { const roster = CLASS_ROSTERS[classSelect.value]; if (roster) { students.splice(0, students.length, ...roster.map(student => ({ ...student }))); render(); } });
 startBtn.addEventListener('click', () => { const record = { date: new Date().toISOString().slice(0, 10), className: classSelect.value, students: students.map(({ name, roll, present }) => ({ name, roll, present })) }; fetch(`${getRelayUrl()}/api/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) }).then(response => { if (!response.ok) throw Error(`Attendance save failed (${response.status})`); saveState.textContent = '● Attendance saved'; }).catch(error => { saveState.textContent = '● Save failed'; showToast(error.message); }); });
 rows.onclick = event => { if (event.target.matches('.status')) { students[Number(event.target.dataset.index)].present = !students[Number(event.target.dataset.index)].present; render(); saveState.textContent = '● Saved just now'; } };
@@ -20,8 +20,35 @@ classSelect.onchange = () => { classLabel.textContent = `Class ${classSelect.val
 const dialog = document.querySelector('#studentDialog');
 addBtn.onclick = () => dialog.showModal();
 closeDialog.onclick = () => dialog.close();
-studentForm.onsubmit = event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); students.push({ ...data, present: false }); render(); dialog.close(); event.target.reset(); showToast(`${data.name} added as absent.`); };
-settingsLink.onclick = event => { event.preventDefault(); relayUrlInput.value = getRelayUrl(); settingsDialog.showModal(); };
+studentForm.onsubmit = event => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.target)); students.push({ ...data, present: true }); render(); dialog.close(); event.target.reset(); showToast(`${data.name} added as present.`); };
+document.addEventListener('click', event => { const settingsLink = event.target.closest('#settingsLink'); if (settingsLink) { event.preventDefault(); relayUrlInput.value = getRelayUrl(); settingsDialog.showModal(); } });
 closeSettings.onclick = () => settingsDialog.close();
 settingsForm.onsubmit = event => { event.preventDefault(); const relayUrl = relayUrlInput.value.trim().replace(/\/$/, ''); if (relayUrl) localStorage.setItem(RELAY_URL_STORAGE, relayUrl); else localStorage.removeItem(RELAY_URL_STORAGE); settingsDialog.close(); showToast(relayUrl ? 'Secure relay URL saved on this device.' : 'Secure relay URL removed.'); };
 function showToast(message) { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); }
+const attendanceSubmit = startBtn.onclick;
+document.addEventListener('click', async event => {
+	if (!event.target.closest('#startBtn')) return;
+	event.preventDefault();
+	event.stopImmediatePropagation();
+	const absent = students.filter(student => !student.present);
+	if (!absent.length) return showToast('Mark at least one student absent first.');
+	const record = { date: new Date().toLocaleDateString('en-CA'), className: classSelect.value, students: students.map(({ name, roll, present }) => ({ name, roll, present })) };
+	startBtn.disabled = true;
+	try {
+		const response = await fetch(`${getRelayUrl()}/api/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
+		if (!response.ok) throw Error(`Attendance save failed (${response.status})`);
+		saveState.textContent = '● Attendance saved';
+		await attendanceSubmit();
+		document.querySelectorAll('.queue-item.done').forEach(item => { item.classList.remove('done', 'calling'); item.querySelector('em').textContent = 'Queued'; item.querySelector('.reason').textContent = 'Call accepted and awaiting completion.'; });
+		document.querySelectorAll('.queue-item').forEach(item => { const name = item.querySelector('strong')?.textContent; if (name) { const key = `attendly-call-${name}`; const saved = JSON.parse(localStorage.getItem(key) || '{}'); localStorage.setItem(key, JSON.stringify({ ...saved, status: 'queued', reason: 'Call accepted and awaiting completion.' })); } });
+		startBtn.textContent = 'Submit & start calls →';
+		queueBadge.textContent = `${absent.length} queued`;
+		showToast('Attendance saved. Calls are queued.');
+	} catch (error) {
+		saveState.textContent = '● Save failed';
+		startBtn.disabled = false;
+		showToast(error.message);
+	}
+}, true);
+const attendanceObserver = new MutationObserver(() => document.querySelectorAll('.status').forEach(button => button.setAttribute('aria-pressed', String(button.classList.contains('present')))));
+attendanceObserver.observe(rows, { childList: true });
